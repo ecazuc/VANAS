@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CS0168: La variable est déclarée mais jamais utilisée
+dotnet_diagnostic.CS0168.severity = none

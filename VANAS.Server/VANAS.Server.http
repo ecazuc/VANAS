@@ -1,0 +1,6 @@
+@VANAS.Server_HostAddress = http://localhost:5049
+
+GET {{VANAS.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

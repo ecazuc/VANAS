@@ -1,0 +1,91 @@
+﻿<Window x:Class="VANAS.Client.AdminPanel"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VANAS.Client"
+        mc:Ignorable="d"
+        Title="Admin Management" Height="1080" Width="1920" Background="#1E1E1E">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="ADMIN CONTROL CENTER" Foreground="White" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
+            <Button Content="LOGOUT" Click="btnLogout_Click" HorizontalAlignment="Right" 
+                    Background="#dc3545" Foreground="White" Width="80" Height="30" FontWeight="Bold"/>
+        </Grid>
+
+        <Border Grid.Row="1" Background="#2D2D2D" CornerRadius="5" Padding="15" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <StackPanel Margin="0,0,15,0">
+                    <TextBlock Text="Username" Foreground="Gray" FontSize="10"/>
+                    <TextBox x:Name="txtNewUser" Width="120" Height="25" VerticalContentAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Margin="0,0,15,0">
+                    <TextBlock Text="Password" Foreground="Gray" FontSize="10"/>
+                    <PasswordBox x:Name="txtNewPass" Width="120" Height="25" VerticalContentAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Margin="0,0,15,0">
+                    <TextBlock Text="Starting Mins" Foreground="Gray" FontSize="10"/>
+                    <TextBox x:Name="txtNewBalance" Width="80" Height="25" Text="60" VerticalContentAlignment="Center"/>
+                </StackPanel>
+
+                <Button Content="CREATE PLAYER" Click="btnCreateUser_Click" 
+                        Background="#007ACC" Foreground="White" 
+                        Width="110" Height="30" Margin="0,12,0,0"
+                        FontWeight="Bold"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Background="#2D2D2D" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+            <StackPanel>
+                <TextBlock Text="SEARCH USERNAME" Foreground="Gray" FontSize="10" Margin="0,0,0,5"/>
+                <TextBox x:Name="txtSearch" Height="30" Background="#1E1E1E" Foreground="White" 
+                         VerticalContentAlignment="Center" Padding="5,0" 
+                         TextChanged="txtSearch_TextChanged"/>
+            </StackPanel>
+        </Border>
+
+        <DataGrid x:Name="dgUsers" Grid.Row="3" AutoGenerateColumns="False" 
+                  Background="#252525" Foreground="White" RowBackground="#333" BorderThickness="0">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="*"/>
+                <DataGridTextColumn Header="Minutes" Binding="{Binding BalanceMinutes}" Width="100"/>
+                <DataGridTemplateColumn Header="Actions" Width="280">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Width="80" Height="25" Margin="2" Click="ToggleAdmin_Click">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Content" Value="USER" />
+                                            <Setter Property="Background" Value="White" />
+                                            <Setter Property="Foreground" Value="Black" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsAdmin}" Value="True">
+                                                    <Setter Property="Content" Value="ADMIN" />
+                                                    <Setter Property="Background" Value="#007ACC" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Content="+1h" Click="AddHour_Click" Width="40" Background="#28a745" Margin="2"/>
+                                <Button Content="KICK" Click="KickUser_Click" Width="50" Background="#fd7e14" Margin="2"/>
+                                <Button Content="DELETE" Click="DeleteUser_Click" Width="60" Background="#dc3545" Margin="2"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>
