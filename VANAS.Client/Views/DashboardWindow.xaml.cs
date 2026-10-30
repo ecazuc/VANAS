@@ -23,6 +23,9 @@ namespace VANAS.Client.Views
         private List<CatalogGameDto> _catalog = new();
         private DetectionResult? _detection;
         private string _gamesSignature = string.Empty;
+        private readonly Dictionary<int, DateTime> _installing = new();
+        private int? _confirmInstallId;
+        private static readonly TimeSpan InstallGiveUp = TimeSpan.FromHours(3);
         private readonly double _initialMinutes;
         private readonly OverlayWindow _overlay = new();
         private readonly DispatcherTimer _bannerTimer = new() { Interval = TimeSpan.FromSeconds(10) };
@@ -142,7 +145,7 @@ namespace VANAS.Client.Views
             App.Token = null;
             new LoginWindow(notice).Show();
             _allowClose = true;
-            if (Kiosk.Enabled) _ = Task.Run(() => ProcessCleaner.KillStartedSince(App.SessionStartedAt));
+            if (Kiosk.Enabled) _ = Task.Run(() => ProcessCleaner.CleanAfterSession(App.SessionStartedAt));
             Close();
         }
 
@@ -262,7 +265,7 @@ namespace VANAS.Client.Views
 
         // ---------- Games ----------
 
-        /// <summary>Re-reads the server catalog and what is installed on this PC (cheap; runs every 20 s).</summary>
+        /// <summary>Re-reads the server catalog and what is installed on this PC (every 20 s, every 5 s while installing).</summary>
         private async Task RefreshGamesAsync()
         {
             try
@@ -285,24 +288,52 @@ namespace VANAS.Client.Views
             var detection = _detection;
             var search = txtSearch.Text.Trim();
 
+            // A game we asked a launcher to install is done once its manifest says installed.
+            foreach (var id in _installing.Keys.ToList())
+            {
+                var game = _catalog.FirstOrDefault(g => g.Id == id);
+                if (game != null && detection.IsInstalled(game.Launcher, game.ExternalId))
+                {
+                    _installing.Remove(id);
+                    ShowGameMessage($"{game.Title} est installé. Bon jeu !", isError: false);
+                }
+                else if (DateTime.UtcNow - _installing[id] > InstallGiveUp)
+                {
+                    _installing.Remove(id);
+                }
+            }
+            _gamesTimer.Interval = _installing.Count > 0 ? TimeSpan.FromSeconds(5) : TimeSpan.FromSeconds(20);
+
             var tiles = _catalog
                 .Where(g => search.Length == 0 || g.Title.Contains(search, StringComparison.OrdinalIgnoreCase))
-                .Select(g =>
-                {
-                    var installed = detection.IsInstalled(g.Launcher, g.ExternalId);
-                    return new GameTileVm(g, g.Title, GameLauncherService.LauncherName(g.Launcher),
-                        installed ? "JOUER" : "NON INSTALLÉ", installed ? 1.0 : 0.55, installed);
-                })
+                .Select(g => BuildTile(g, detection))
                 .OrderByDescending(t => t.Installed).ThenBy(t => t.Title)
                 .ToList();
 
             // Avoid rebuilding the grid (and resetting hover/scroll) when nothing changed.
-            var signature = string.Join('|', tiles.Select(t => $"{t.Game.Id}:{t.Installed}:{t.Title}"));
+            var signature = string.Join('|', tiles.Select(t => $"{t.Game.Id}:{t.Status}:{t.Title}"));
             if (signature == _gamesSignature) return;
             _gamesSignature = signature;
 
             listGames.ItemsSource = tiles;
             lblNoGames.Visibility = tiles.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private GameTileVm BuildTile(CatalogGameDto g, DetectionResult detection)
+        {
+            var launcher = GameLauncherService.LauncherName(g.Launcher);
+            if (detection.IsInstalled(g.Launcher, g.ExternalId))
+                return new GameTileVm(g, g.Title, launcher, "JOUER", 1.0, true);
+
+            if (detection.Progress.TryGetValue((g.Launcher, g.ExternalId), out var percent))
+                return new GameTileVm(g, g.Title, launcher, $"INSTALLATION {percent:0} %", 0.9, false);
+
+            if (_installing.ContainsKey(g.Id))
+                return new GameTileVm(g, g.Title, launcher, "INSTALLATION EN COURS...", 0.9, false);
+
+            return _confirmInstallId == g.Id
+                ? new GameTileVm(g, g.Title, launcher, "CLIQUEZ POUR CONFIRMER", 1.0, false)
+                : new GameTileVm(g, g.Title, launcher, "INSTALLER", 0.7, false);
         }
 
         private void txtSearch_TextChanged(object sender, TextChangedEventArgs e) => ApplyGameFilter();
@@ -317,15 +348,60 @@ namespace VANAS.Client.Views
         private void Game_Click(object sender, RoutedEventArgs e)
         {
             if ((sender as Button)?.DataContext is not GameTileVm tile || _detection == null) return;
+            var detection = _detection;
 
-            if (!tile.Installed)
+            if (tile.Installed)
             {
-                ShowGameMessage($"{tile.Title} n'est pas installé sur ce poste.", isError: true);
+                var error = GameLauncherService.Launch(tile.Game, detection);
+                ShowGameMessage(error ?? $"Lancement de {tile.Title}...", isError: error != null);
                 return;
             }
 
-            var error = GameLauncherService.Launch(tile.Game, _detection);
-            ShowGameMessage(error ?? $"Lancement de {tile.Title}...", isError: error != null);
+            if (_installing.ContainsKey(tile.Game.Id) || detection.Progress.ContainsKey((tile.Game.Launcher, tile.Game.ExternalId)))
+            {
+                ShowGameMessage($"L'installation de {tile.Title} est déjà en cours.", isError: false);
+                return;
+            }
+
+            // First click asks for confirmation (installs are large and slow the network for everyone).
+            if (_confirmInstallId != tile.Game.Id)
+            {
+                _confirmInstallId = tile.Game.Id;
+                ShowGameMessage($"Installer {tile.Title} ? Cliquez une seconde fois pour confirmer.", isError: false);
+                ApplyGameFilter();
+                return;
+            }
+            _confirmInstallId = null;
+
+            if (_installing.Count > 0 || detection.Progress.Count > 0)
+            {
+                ShowGameMessage("Une installation est déjà en cours sur ce poste. Attendez qu'elle se termine.", isError: true);
+                ApplyGameFilter();
+                return;
+            }
+
+            var free = DiskSpace.FreeGbFor(tile.Game.Launcher, detection);
+            if (free is double gb && gb < App.Config.MinFreeDiskGb)
+            {
+                ShowGameMessage($"Espace disque insuffisant ({gb:0} Go libres, {App.Config.MinFreeDiskGb} Go minimum). Prévenez le staff.", isError: true);
+                ApplyGameFilter();
+                return;
+            }
+
+            var installError = GameLauncherService.Install(tile.Game, detection);
+            if (installError != null)
+            {
+                ShowGameMessage(installError, isError: true);
+            }
+            else
+            {
+                _installing[tile.Game.Id] = DateTime.UtcNow;
+                ShowGameMessage(
+                    $"Connectez-vous à votre compte {tile.LauncherName} dans la fenêtre qui s'ouvre : l'installation démarrera ensuite. " +
+                    "VANAS ne voit ni ne conserve vos identifiants.", isError: false);
+            }
+            ApplyGameFilter();
+            _ = RefreshGamesAsync();
         }
 
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e) => App.HandleExitKey(e, this);

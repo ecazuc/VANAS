@@ -111,3 +111,76 @@ public class LauncherParserTests
         Assert.Equal("--launch-product=valorant --launch-patchline=live", LauncherUris.RiotArguments("valorant"));
     }
 }
+
+public class LauncherInstallTests
+{
+    [Fact]
+    public void Steam_progress_is_computed_from_downloaded_bytes()
+    {
+        const string acf = "\"AppState\"\n{\n\t\"appid\"\t\"730\"\n\t\"StateFlags\"\t\"1026\"\n\t\"BytesToDownload\"\t\"2000\"\n\t\"BytesDownloaded\"\t\"500\"\n}";
+        var percent = InstalledGameParsers.ParseSteamProgress(acf, out var appId);
+        Assert.Equal("730", appId);
+        Assert.Equal(25, percent!.Value, 3);
+    }
+
+    [Fact]
+    public void Steam_progress_is_unknown_when_nothing_to_download()
+    {
+        const string acf = "\"AppState\"\n{\n\t\"appid\"\t\"730\"\n\t\"StateFlags\"\t\"4\"\n\t\"BytesToDownload\"\t\"0\"\n}";
+        Assert.Null(InstalledGameParsers.ParseSteamProgress(acf, out _));
+        Assert.Null(InstalledGameParsers.ParseSteamProgress("garbage {", out _));
+    }
+
+    [Fact]
+    public void Login_cleanup_removes_remembered_logins_but_leaves_games_and_other_files_alone()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "vanas-cleanup-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var local = Path.Combine(root, "local");
+            var steam = Path.Combine(root, "Steam");
+
+            string Touch(params string[] parts)
+            {
+                var path = Path.Combine(parts);
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                File.WriteAllText(path, "x");
+                return path;
+            }
+
+            var epicIni = Touch(local, "EpicGamesLauncher", "Saved", "Config", "Windows", "GameUserSettings.ini");
+            var riotYaml = Touch(local, "Riot Games", "Riot Client", "Data", "RiotGamesPrivateSettings.yaml");
+            var riotSession = Touch(local, "Riot Games", "Riot Client", "Data", "Sessions", "s.json");
+            var webcache = Touch(local, "EpicGamesLauncher", "Saved", "webcache_4147", "cookies");
+            var steamLogin = Touch(steam, "config", "loginusers.vdf");
+            var gameFile = Touch(steam, "steamapps", "common", "Game", "game.exe");
+            var riotSettings = Touch(local, "Riot Games", "Riot Client", "Config", "RiotClientSettings.yaml");
+
+            var removed = LauncherLoginCleanup.Wipe(
+                LauncherLoginCleanup.FilesToDelete(steam, local),
+                LauncherLoginCleanup.DirectoriesToDelete(local));
+
+            Assert.Equal(5, removed);
+            Assert.False(File.Exists(epicIni));
+            Assert.False(File.Exists(riotYaml));
+            Assert.False(File.Exists(steamLogin));
+            Assert.False(Directory.Exists(Path.GetDirectoryName(riotSession)));
+            Assert.False(Directory.Exists(Path.GetDirectoryName(webcache)));
+            Assert.True(File.Exists(gameFile));
+            Assert.True(File.Exists(riotSettings));
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
+    [Fact]
+    public void Login_cleanup_on_a_machine_without_launchers_does_nothing_and_does_not_throw()
+    {
+        var nowhere = Path.Combine(Path.GetTempPath(), "vanas-none-" + Guid.NewGuid().ToString("N"));
+        Assert.Equal(0, LauncherLoginCleanup.Wipe(
+            LauncherLoginCleanup.FilesToDelete(null, nowhere),
+            LauncherLoginCleanup.DirectoriesToDelete(nowhere)));
+    }
+}

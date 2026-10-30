@@ -38,6 +38,19 @@ namespace VANAS.Shared.Launchers
             return new InstalledGame(GameLauncher.Steam, appId, name);
         }
 
+        /// <summary>Download progress (0-100) of a Steam game being installed or updated, or null if unknown.</summary>
+        public static double? ParseSteamProgress(string acf, out string? appId)
+        {
+            appId = null;
+            var state = ValveKeyValues.GetObject(ValveKeyValues.Parse(acf), "AppState");
+            if (state == null) return null;
+
+            appId = ValveKeyValues.GetString(state, "appid");
+            if (!double.TryParse(ValveKeyValues.GetString(state, "BytesToDownload"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var total) || total <= 0) return null;
+            double.TryParse(ValveKeyValues.GetString(state, "BytesDownloaded"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var done);
+            return Math.Clamp(done / total * 100, 0, 100);
+        }
+
         /// <summary>An Epic Games Launcher .item manifest. Returns null for incomplete installs or unreadable files.</summary>
         public static InstalledGame? ParseEpicManifest(string json)
         {

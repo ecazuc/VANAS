@@ -8,7 +8,9 @@ namespace VANAS.Client.Services
         HashSet<(GameLauncher Launcher, string ExternalId)> Installed,
         bool SteamAvailable,
         bool EpicAvailable,
-        string? RiotClientPath)
+        string? RiotClientPath,
+        Dictionary<(GameLauncher Launcher, string ExternalId), double> Progress,
+        string? SteamPath)
     {
         public bool IsInstalled(GameLauncher launcher, string externalId) => Installed.Contains((launcher, externalId));
 
@@ -26,10 +28,11 @@ namespace VANAS.Client.Services
         public static DetectionResult Detect()
         {
             var installed = new HashSet<(GameLauncher, string)>();
-            var steamAvailable = DetectSteam(installed);
+            var progress = new Dictionary<(GameLauncher, string), double>();
+            var steamAvailable = DetectSteam(installed, progress);
             var epicAvailable = DetectEpic(installed);
             var riotClient = DetectRiot(installed);
-            return new DetectionResult(installed, steamAvailable, epicAvailable, riotClient);
+            return new DetectionResult(installed, steamAvailable, epicAvailable, riotClient, progress, SteamPath());
         }
 
         private static string? SteamPath()
@@ -39,7 +42,7 @@ namespace VANAS.Client.Services
             return path == null ? null : Path.GetFullPath(path);
         }
 
-        private static bool DetectSteam(HashSet<(GameLauncher, string)> installed)
+        private static bool DetectSteam(HashSet<(GameLauncher, string)> installed, Dictionary<(GameLauncher, string), double> progress)
         {
             var steam = SteamPath();
             var protocolRegistered = Registry.ClassesRoot.OpenSubKey("steam") != null;
@@ -57,8 +60,11 @@ namespace VANAS.Client.Services
 
                 foreach (var file in SafeFiles(apps, "appmanifest_*.acf"))
                 {
-                    if (TryRead(file, out var acf) && InstalledGameParsers.ParseSteamAppManifest(acf) is { } game)
+                    if (!TryRead(file, out var acf)) continue;
+                    if (InstalledGameParsers.ParseSteamAppManifest(acf) is { } game)
                         installed.Add((GameLauncher.Steam, game.ExternalId));
+                    else if (InstalledGameParsers.ParseSteamProgress(acf, out var inProgressId) is { } percent && inProgressId != null)
+                        progress[(GameLauncher.Steam, inProgressId)] = percent;
                 }
             }
             return true;

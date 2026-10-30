@@ -16,6 +16,12 @@ namespace VANAS.Client.Services
         /// <summary>Close games/launchers when the session ends. Keep true in production; set false to test the lock on a non-dedicated account.</summary>
         public bool CloseProgramsOnLogout { get; set; } = true;
 
+        /// <summary>Forget launcher logins (Steam/Epic/Riot) when a session ends. Kiosk account only.</summary>
+        public bool WipeLauncherLogins { get; set; } = true;
+
+        /// <summary>Refuse to start an installation when the launcher drive has less free space than this (GB).</summary>
+        public int MinFreeDiskGb { get; set; } = 20;
+
         /// <summary>PBKDF2 hash of the admin PIN (generate with kiosk/New-AdminPin.ps1). Empty = no way to exit in kiosk mode.</summary>
         public string AdminPinHash { get; set; } = string.Empty;
 
