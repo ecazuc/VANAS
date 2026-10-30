@@ -12,6 +12,7 @@ namespace VANAS.Client.Views
     {
         private readonly double _initialMinutes;
         private bool _leaving;
+        private bool _allowClose;
 
         public DashboardWindow(string username, double initialMinutes)
         {
@@ -29,6 +30,8 @@ namespace VANAS.Client.Views
             App.Session.TimeChanged += OnTimeChanged;
             App.Session.OnlineChanged += OnOnlineChanged;
             App.Session.Ended += OnEnded;
+            Loaded += (_, _) => Kiosk.EnterSession(this);
+            Closing += (_, e) => e.Cancel = Kiosk.Enabled && !_allowClose && !App.Exiting;
             Closed += (_, _) => Unsubscribe();
             OnTimeChanged(App.Session.MinutesLeft);
         }
@@ -78,6 +81,8 @@ namespace VANAS.Client.Views
             _leaving = true;
             App.Token = null;
             new LoginWindow(notice).Show();
+            _allowClose = true;
+            if (Kiosk.Enabled) _ = Task.Run(() => ProcessCleaner.KillStartedSince(App.SessionStartedAt));
             Close();
         }
 
@@ -94,6 +99,6 @@ namespace VANAS.Client.Views
             }
         }
 
-        private void Window_PreviewKeyDown(object sender, KeyEventArgs e) => App.HandleExitKey(e);
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e) => App.HandleExitKey(e, this);
     }
 }

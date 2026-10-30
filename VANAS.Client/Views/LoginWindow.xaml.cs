@@ -9,13 +9,20 @@ namespace VANAS.Client.Views
     public partial class LoginWindow : Window
     {
         private bool _registerMode;
+        private bool _allowClose;
 
         public LoginWindow(string? notice = null)
         {
             InitializeComponent();
             lblStation.Text = $"POSTE : {App.Config.StationName.ToUpper()}";
             if (notice != null) ShowStatus(notice, isError: true);
-            Loaded += (_, _) => txtUser.Focus();
+            Loaded += (_, _) =>
+            {
+                txtUser.Focus();
+                Kiosk.Lock(this);
+            };
+            Closing += (_, e) => e.Cancel = Kiosk.Enabled && !_allowClose && !App.Exiting;
+            Deactivated += (_, _) => { if (Kiosk.Enabled && !_allowClose) Dispatcher.BeginInvoke(Activate); };
         }
 
         private void ShowStatus(string text, bool isError)
@@ -24,7 +31,7 @@ namespace VANAS.Client.Views
             lblStatus.Foreground = (Brush)FindResource(isError ? "DangerBrush" : "OkBrush");
         }
 
-        private void Window_PreviewKeyDown(object sender, KeyEventArgs e) => App.HandleExitKey(e);
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e) => App.HandleExitKey(e, this);
 
         private void btnToggle_Click(object sender, RoutedEventArgs e)
         {
@@ -95,7 +102,9 @@ namespace VANAS.Client.Views
                 return;
             }
 
+            App.SessionStartedAt = DateTime.Now;
             App.Session.Start(start.Content);
+            _allowClose = true;
             new DashboardWindow(login.Content.Username, start.Content.MinutesLeft).Show();
             Close();
         }

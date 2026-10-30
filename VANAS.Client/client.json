@@ -1,4 +1,8 @@
 {
   "ServerUrl": "http://localhost:5049",
-  "StationName": ""
+  "StationName": "",
+  "KioskMode": false,
+  "KioskAccount": "vanas-client",
+  "CloseProgramsOnLogout": true,
+  "AdminPinHash": ""
 }
