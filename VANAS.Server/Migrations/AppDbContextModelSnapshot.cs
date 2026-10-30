@@ -17,6 +17,37 @@ namespace VANAS.Server.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.24");
 
+            modelBuilder.Entity("VANAS.Shared.Models.CatalogGame", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Launcher")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Launcher", "ExternalId")
+                        .IsUnique();
+
+                    b.ToTable("Games");
+                });
+
             modelBuilder.Entity("VANAS.Shared.Models.GameSession", b =>
                 {
                     b.Property<int>("Id")

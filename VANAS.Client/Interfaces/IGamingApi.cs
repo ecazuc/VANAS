@@ -20,6 +20,9 @@ namespace VANAS.Client.Interfaces
         [Post("/api/sessions/{id}/end")]
         Task<IApiResponse> EndSession(int id);
 
+        [Get("/api/catalog")]
+        Task<ApiResponse<List<CatalogGameDto>>> GetCatalog();
+
         [Get("/api/profile/me")]
         Task<ApiResponse<ProfileInfo>> GetProfile();
 

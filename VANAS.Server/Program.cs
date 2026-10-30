@@ -79,6 +79,12 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 
+    if (!db.Games.Any())
+    {
+        db.Games.AddRange(CatalogSeed.Games());
+        db.SaveChanges();
+    }
+
     if (!db.Users.Any())
     {
         var adminPassword = app.Configuration["Seed:AdminPassword"];

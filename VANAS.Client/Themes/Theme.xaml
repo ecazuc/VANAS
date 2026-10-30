@@ -41,6 +41,7 @@
     </Style>
 
     <Style TargetType="TextBox">
+        <Setter Property="Background" Value="{StaticResource BgBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource TechFont}"/>
@@ -48,7 +49,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
-                    <Border x:Name="Bd" Background="{StaticResource BgBrush}" BorderBrush="{StaticResource PanelLightBrush}"
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{StaticResource PanelLightBrush}"
                             BorderThickness="0,0,0,2" Padding="10,9">
                         <ScrollViewer x:Name="PART_ContentHost"/>
                     </Border>

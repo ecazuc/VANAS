@@ -62,17 +62,29 @@
             </StackPanel>
         </StackPanel>
 
-        <!-- Games (placeholder until PC-4: real detection of installed games) -->
+        <!-- Games: catalog from the server, status from this PC's launchers -->
         <ScrollViewer x:Name="panelGames" Grid.Row="3" VerticalScrollBarVisibility="Auto" Padding="32">
             <StackPanel>
-                <TextBlock Text="LANCEURS" Style="{StaticResource TitleText}" FontSize="22" Margin="0,0,0,20"/>
-                <ItemsControl x:Name="listLaunchers">
+                <Grid Margin="0,0,0,20">
+                    <TextBlock Text="JEUX" Style="{StaticResource TitleText}" FontSize="22" VerticalAlignment="Center"/>
+                    <TextBox x:Name="txtSearch" Width="300" HorizontalAlignment="Right" FontSize="16" Background="{StaticResource PanelBrush}" TextChanged="txtSearch_TextChanged"
+                             ToolTip="Rechercher un jeu"/>
+                </Grid>
+                <TextBlock x:Name="lblGameMessage" FontSize="14" TextWrapping="Wrap" Margin="0,0,0,12" Visibility="Collapsed"/>
+                <TextBlock x:Name="lblNoGames" Text="Aucun jeu pour l'instant." Foreground="{StaticResource MutedBrush}" Visibility="Collapsed"/>
+                <ItemsControl x:Name="listGames">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Content="{Binding Title}" Style="{StaticResource GameTile}" Click="Launcher_Click"/>
+                            <Button Style="{StaticResource GameTile}" Click="Game_Click" Opacity="{Binding Opacity}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}" TextAlignment="Center" TextWrapping="Wrap" FontSize="20" FontWeight="Bold" Margin="12,0"/>
+                                    <TextBlock Text="{Binding LauncherName}" TextAlignment="Center" FontSize="12" Opacity="0.6" Margin="0,6,0,0"/>
+                                    <TextBlock Text="{Binding Status}" TextAlignment="Center" FontSize="13" FontWeight="Bold" Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

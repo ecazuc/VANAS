@@ -13,6 +13,7 @@ namespace VANAS.Server.Data
         public DbSet<TimeLedgerEntry> TimeLedger => Set<TimeLedgerEntry>();
         public DbSet<Station> Stations => Set<Station>();
         public DbSet<GameSession> Sessions => Set<GameSession>();
+        public DbSet<CatalogGame> Games => Set<CatalogGame>();
 
         protected override void OnModelCreating(ModelBuilder b)
         {
@@ -22,6 +23,7 @@ namespace VANAS.Server.Data
             b.Entity<Profile>().Property(p => p.DisplayName).UseCollation("NOCASE");
             b.Entity<Profile>().HasIndex(p => p.DisplayName).IsUnique();
             b.Entity<Station>().HasIndex(s => s.Name).IsUnique();
+            b.Entity<CatalogGame>().HasIndex(g => new { g.Launcher, g.ExternalId }).IsUnique();
             b.Entity<TimeLedgerEntry>().HasIndex(t => t.UserId);
             b.Entity<GameSession>().HasIndex(s => new { s.UserId, s.EndedAt });
             b.Entity<GameSession>().HasOne(s => s.Station).WithMany().HasForeignKey(s => s.StationId);

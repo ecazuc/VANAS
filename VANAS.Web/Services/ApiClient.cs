@@ -52,6 +52,17 @@ namespace VANAS.Web.Services
         public Task<ApiResult> DeleteUserAsync(int userId) =>
             SendAsync(HttpMethod.Delete, $"api/users/{userId}");
 
+        public Task<ApiResult<List<CatalogGameDto>>> GetCatalogAsync() =>
+            SendAsync<List<CatalogGameDto>>(HttpMethod.Get, "api/catalog/all");
+
+        public Task<ApiResult> SaveGameAsync(int? id, SaveCatalogGameRequest request) =>
+            id is int existing
+                ? SendAsync(HttpMethod.Put, $"api/catalog/{existing}", request)
+                : SendAsync(HttpMethod.Post, "api/catalog", request);
+
+        public Task<ApiResult> DeleteGameAsync(int id) =>
+            SendAsync(HttpMethod.Delete, $"api/catalog/{id}");
+
         public Task<ApiResult> RegisterAsync(string username, string password) =>
             SendAsync(HttpMethod.Post, "api/auth/register", new RegisterRequest(username, password), authenticated: false);
 

@@ -17,6 +17,12 @@ namespace VANAS.Client.Views
         private record AvatarChoice(string Key, Brush Brush);
         private record HistoryRow(string When, string Station, string Duration, string Reason);
 
+        private record GameTileVm(CatalogGameDto Game, string Title, string LauncherName, string Status, double Opacity, bool Installed);
+
+        private readonly DispatcherTimer _gamesTimer = new() { Interval = TimeSpan.FromSeconds(20) };
+        private List<CatalogGameDto> _catalog = new();
+        private DetectionResult? _detection;
+        private string _gamesSignature = string.Empty;
         private readonly double _initialMinutes;
         private readonly OverlayWindow _overlay = new();
         private readonly DispatcherTimer _bannerTimer = new() { Interval = TimeSpan.FromSeconds(10) };
@@ -35,12 +41,6 @@ namespace VANAS.Client.Views
             avatarSmall.Set(Avatars.Default, username);
             _initialMinutes = Math.Max(initialMinutes, 1);
 
-            // Placeholders: real detection of installed launchers/games arrives in PC-4.
-            listLaunchers.ItemsSource = new List<GameItem>
-            {
-                new() { Title = "STEAM", ExePath = "steam://open/main" },
-                new() { Title = "EPIC GAMES", ExePath = "com.epicgames.launcher://" }
-            };
             listAvatars.ItemsSource = Avatars.Colors.Select(c => new AvatarChoice(c.Key, AvatarBadge.BrushFor(c.Key))).ToList();
 
             App.Session.TimeChanged += OnTimeChanged;
@@ -57,16 +57,19 @@ namespace VANAS.Client.Views
                 bannerWarning.Visibility = Visibility.Collapsed;
             };
 
+            _gamesTimer.Tick += async (_, _) => await RefreshGamesAsync();
             Loaded += async (_, _) =>
             {
                 Kiosk.EnterSession(this);
-                await LoadProfileAsync();
+                _gamesTimer.Start();
+                await Task.WhenAll(LoadProfileAsync(), RefreshGamesAsync());
             };
             Closing += (_, e) => e.Cancel = Kiosk.Enabled && !_allowClose && !App.Exiting;
             Closed += (_, _) =>
             {
                 Unsubscribe();
                 _bannerTimer.Stop();
+                _gamesTimer.Stop();
                 _overlay.Close();
             };
             OnTimeChanged(App.Session.MinutesLeft);
@@ -259,17 +262,70 @@ namespace VANAS.Client.Views
 
         // ---------- Games ----------
 
-        private void Launcher_Click(object sender, RoutedEventArgs e)
+        /// <summary>Re-reads the server catalog and what is installed on this PC (cheap; runs every 20 s).</summary>
+        private async Task RefreshGamesAsync()
         {
-            if ((sender as Button)?.DataContext is not GameItem game) return;
             try
             {
-                Process.Start(new ProcessStartInfo { FileName = game.ExePath, UseShellExecute = true });
+                var catalog = await App.Api.GetCatalog();
+                if (catalog.IsSuccessStatusCode && catalog.Content != null) _catalog = catalog.Content;
             }
-            catch (Exception ex)
+            catch
             {
-                MessageBox.Show($"Impossible de lancer {game.Title} : {ex.Message}");
+                // keep the last known catalog while the server is unreachable
             }
+
+            _detection = await Task.Run(LauncherDetector.Detect);
+            ApplyGameFilter();
+        }
+
+        private void ApplyGameFilter()
+        {
+            if (_detection == null) return;
+            var detection = _detection;
+            var search = txtSearch.Text.Trim();
+
+            var tiles = _catalog
+                .Where(g => search.Length == 0 || g.Title.Contains(search, StringComparison.OrdinalIgnoreCase))
+                .Select(g =>
+                {
+                    var installed = detection.IsInstalled(g.Launcher, g.ExternalId);
+                    return new GameTileVm(g, g.Title, GameLauncherService.LauncherName(g.Launcher),
+                        installed ? "JOUER" : "NON INSTALLÉ", installed ? 1.0 : 0.55, installed);
+                })
+                .OrderByDescending(t => t.Installed).ThenBy(t => t.Title)
+                .ToList();
+
+            // Avoid rebuilding the grid (and resetting hover/scroll) when nothing changed.
+            var signature = string.Join('|', tiles.Select(t => $"{t.Game.Id}:{t.Installed}:{t.Title}"));
+            if (signature == _gamesSignature) return;
+            _gamesSignature = signature;
+
+            listGames.ItemsSource = tiles;
+            lblNoGames.Visibility = tiles.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void txtSearch_TextChanged(object sender, TextChangedEventArgs e) => ApplyGameFilter();
+
+        private void ShowGameMessage(string? message, bool isError)
+        {
+            lblGameMessage.Visibility = message == null ? Visibility.Collapsed : Visibility.Visible;
+            lblGameMessage.Text = message ?? string.Empty;
+            lblGameMessage.Foreground = (Brush)FindResource(isError ? "DangerBrush" : "OkBrush");
+        }
+
+        private void Game_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is not GameTileVm tile || _detection == null) return;
+
+            if (!tile.Installed)
+            {
+                ShowGameMessage($"{tile.Title} n'est pas installé sur ce poste.", isError: true);
+                return;
+            }
+
+            var error = GameLauncherService.Launch(tile.Game, _detection);
+            ShowGameMessage(error ?? $"Lancement de {tile.Title}...", isError: error != null);
         }
 
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e) => App.HandleExitKey(e, this);

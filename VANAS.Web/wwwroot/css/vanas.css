@@ -127,3 +127,6 @@ label { display: block; margin: 14px 0 4px; font-size: 0.8rem; color: var(--mute
 
 #blazor-error-ui { display: none; position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 20px; background: var(--danger); color: var(--bg); z-index: 1000; font-weight: 600; }
 #blazor-error-ui a { color: var(--bg); text-decoration: underline; margin-left: 12px; }
+
+.games-row { grid-template-columns: 1.4fr 0.8fr 1.2fr auto auto !important; }
+.chip-button { background: transparent; cursor: pointer; font: inherit; font-family: var(--font-tech); }

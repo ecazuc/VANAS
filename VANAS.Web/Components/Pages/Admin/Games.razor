@@ -1,0 +1,170 @@
+@page "/admin/jeux"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using VANAS.Shared.Launchers
+@inject ApiClient Api
+@inject StaffAuthState Auth
+
+<PageTitle>Jeux - VANAS staff</PageTitle>
+
+<AdminShell Title="Catalogue de jeux">
+    <p class="muted">
+        Seuls les jeux activés apparaissent sur les PC des clients. Le jeu doit ensuite être installé sur le poste
+        (ou installé par le client depuis VANAS).
+    </p>
+
+    @if (_message != null)
+    {
+        <p class="msg @(_messageIsError ? "error" : "ok")">@_message</p>
+    }
+
+    <form class="card inline-form" @onsubmit="SaveAsync">
+        <h3>@(_editingId == null ? "Ajouter un jeu" : "Modifier le jeu")</h3>
+        <div class="row games-row">
+            <input placeholder="Titre" @bind="_title" />
+            <select @bind="_launcher">
+                @foreach (var l in Enum.GetValues<GameLauncher>())
+                {
+                    <option value="@l">@Label(l)</option>
+                }
+            </select>
+            <input placeholder="@IdHint(_launcher)" @bind="_externalId" />
+            <button class="btn" type="submit">@(_editingId == null ? "Ajouter" : "Enregistrer")</button>
+            @if (_editingId != null)
+            {
+                <button class="btn small" type="button" @onclick="CancelEdit">Annuler</button>
+            }
+        </div>
+        <p class="muted label">@IdHelp(_launcher)</p>
+    </form>
+
+    <table class="table">
+        <thead>
+            <tr><th>Titre</th><th>Launcher</th><th>Identifiant</th><th>Visible</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var g in _games)
+            {
+                <tr>
+                    <td><strong>@g.Title</strong></td>
+                    <td>@Label(g.Launcher)</td>
+                    <td class="muted">@g.ExternalId</td>
+                    <td>
+                        <button class="chip @(g.IsEnabled ? "chip-on" : "chip-off") chip-button" @onclick="() => ToggleAsync(g)">
+                            @(g.IsEnabled ? "ACTIVÉ" : "MASQUÉ")
+                        </button>
+                    </td>
+                    <td class="actions">
+                        <button class="btn small" @onclick="() => Edit(g)">Modifier</button>
+                        <button class="btn small danger" @onclick="() => DeleteAsync(g)">
+                            @(_confirmDelete == g.Id ? "Confirmer ?" : "Supprimer")
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</AdminShell>
+
+@code {
+    private List<CatalogGameDto> _games = new();
+    private int? _editingId;
+    private string _title = string.Empty;
+    private GameLauncher _launcher = GameLauncher.Steam;
+    private string _externalId = string.Empty;
+    private int? _confirmDelete;
+    private string? _message;
+    private bool _messageIsError;
+
+    private static string Label(GameLauncher l) => l switch
+    {
+        GameLauncher.Steam => "Steam",
+        GameLauncher.Epic => "Epic Games",
+        _ => "Riot Games"
+    };
+
+    private static string IdHint(GameLauncher l) => l switch
+    {
+        GameLauncher.Steam => "AppID Steam (ex. 730)",
+        GameLauncher.Epic => "AppName Epic (ex. Fortnite)",
+        _ => "Produit Riot (ex. valorant)"
+    };
+
+    private static string IdHelp(GameLauncher l) => l switch
+    {
+        GameLauncher.Steam => "L'AppID se trouve dans l'URL de la page du jeu sur le store Steam (store.steampowered.com/app/730).",
+        GameLauncher.Epic => "Le nom interne du jeu dans l'Epic Games Launcher (visible dans les fichiers .item du launcher).",
+        _ => "Identifiants Riot : valorant, league_of_legends, teamfighttactics, bacon (Legends of Runeterra), lion (2XKO)."
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Auth.Token == null) return;
+        var result = await Api.GetCatalogAsync();
+        if (result.Ok && result.Value != null) _games = result.Value;
+        else Report(result.Error, true);
+    }
+
+    private void Report(string? text, bool isError)
+    {
+        _message = text;
+        _messageIsError = isError;
+    }
+
+    private void Edit(CatalogGameDto g)
+    {
+        _editingId = g.Id;
+        _title = g.Title;
+        _launcher = g.Launcher;
+        _externalId = g.ExternalId;
+        Report(null, false);
+    }
+
+    private void CancelEdit()
+    {
+        _editingId = null;
+        _title = _externalId = string.Empty;
+    }
+
+    private async Task SaveAsync()
+    {
+        var enabled = _editingId == null || (_games.FirstOrDefault(g => g.Id == _editingId)?.IsEnabled ?? true);
+        var result = await Api.SaveGameAsync(_editingId, new SaveCatalogGameRequest(_title, _launcher, _externalId, enabled));
+        if (!result.Ok)
+        {
+            Report(result.Error, true);
+            return;
+        }
+
+        Report(_editingId == null ? $"« {_title} » ajouté." : $"« {_title} » modifié.", false);
+        CancelEdit();
+        await LoadAsync();
+    }
+
+    private async Task ToggleAsync(CatalogGameDto g)
+    {
+        var result = await Api.SaveGameAsync(g.Id, new SaveCatalogGameRequest(g.Title, g.Launcher, g.ExternalId, !g.IsEnabled));
+        Report(result.Ok ? $"« {g.Title} » est maintenant {(g.IsEnabled ? "masqué" : "visible")}." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(CatalogGameDto g)
+    {
+        if (_confirmDelete != g.Id)
+        {
+            _confirmDelete = g.Id;
+            return;
+        }
+
+        _confirmDelete = null;
+        var result = await Api.DeleteGameAsync(g.Id);
+        Report(result.Ok ? $"« {g.Title} » supprimé." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+}

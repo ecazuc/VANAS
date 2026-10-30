@@ -65,3 +65,10 @@ namespace VANAS.Shared.Contracts
         string StationName,
         VANAS.Shared.Models.SessionEndReason? EndReason);
 }
+
+namespace VANAS.Shared.Contracts
+{
+    public record CatalogGameDto(int Id, string Title, VANAS.Shared.Launchers.GameLauncher Launcher, string ExternalId, bool IsEnabled);
+
+    public record SaveCatalogGameRequest(string Title, VANAS.Shared.Launchers.GameLauncher Launcher, string ExternalId, bool IsEnabled);
+}

@@ -285,6 +285,64 @@ public class ApiTests : IClassFixture<VanasFactory>
     }
 
     [Fact]
+    public async Task Players_see_only_enabled_catalog_games_and_the_starter_catalog_exists()
+    {
+        var (_, player) = await NewClientUserAsync("cataloguer", 0);
+        var visible = (await player.GetFromJsonAsync<List<CatalogGameDto>>("/api/catalog", Json))!;
+        Assert.Contains(visible, g => g.Title == "Counter-Strike 2" && g.ExternalId == "730");
+        Assert.All(visible, g => Assert.True(g.IsEnabled));
+
+        var admin = await AdminAsync();
+        var created = (await (await admin.PostAsJsonAsync("/api/catalog",
+            new SaveCatalogGameRequest("Hidden Gem", VANAS.Shared.Launchers.GameLauncher.Steam, "999001", false), Json))
+            .Content.ReadFromJsonAsync<CatalogGameDto>(Json))!;
+
+        var afterHidden = (await player.GetFromJsonAsync<List<CatalogGameDto>>("/api/catalog", Json))!;
+        Assert.DoesNotContain(afterHidden, g => g.Id == created.Id);
+
+        (await admin.PutAsJsonAsync($"/api/catalog/{created.Id}",
+            new SaveCatalogGameRequest("Hidden Gem", VANAS.Shared.Launchers.GameLauncher.Steam, "999001", true), Json)).EnsureSuccessStatusCode();
+        var afterEnabled = (await player.GetFromJsonAsync<List<CatalogGameDto>>("/api/catalog", Json))!;
+        Assert.Contains(afterEnabled, g => g.Id == created.Id);
+
+        (await admin.DeleteAsync($"/api/catalog/{created.Id}")).EnsureSuccessStatusCode();
+    }
+
+    [Fact]
+    public async Task Only_staff_can_edit_the_catalog()
+    {
+        var (_, player) = await NewClientUserAsync("sneaky", 0);
+        var res = await player.PostAsJsonAsync("/api/catalog",
+            new SaveCatalogGameRequest("Cheat", VANAS.Shared.Launchers.GameLauncher.Steam, "1", true), Json);
+        Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await player.GetAsync("/api/catalog/all")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _factory.CreateClient().GetAsync("/api/catalog")).StatusCode);
+    }
+
+    [Theory]
+    [InlineData("730 & calc.exe")]
+    [InlineData("a;b")]
+    [InlineData("../../x")]
+    [InlineData("")]
+    [InlineData("with space")]
+    public async Task Catalog_rejects_external_ids_that_could_inject_into_launcher_commands(string externalId)
+    {
+        var admin = await AdminAsync();
+        var res = await admin.PostAsJsonAsync("/api/catalog",
+            new SaveCatalogGameRequest("Evil", VANAS.Shared.Launchers.GameLauncher.Riot, externalId, true), Json);
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Duplicate_catalog_entries_are_rejected()
+    {
+        var admin = await AdminAsync();
+        var dup = await admin.PostAsJsonAsync("/api/catalog",
+            new SaveCatalogGameRequest("CS2 again", VANAS.Shared.Launchers.GameLauncher.Steam, "730", true), Json);
+        Assert.Equal(HttpStatusCode.BadRequest, dup.StatusCode);
+    }
+
+    [Fact]
     public async Task Profile_endpoints_require_authentication()
     {
         Assert.Equal(HttpStatusCode.Unauthorized, (await _factory.CreateClient().GetAsync("/api/profile/me")).StatusCode);
