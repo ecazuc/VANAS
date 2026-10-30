@@ -1,4 +1,4 @@
-﻿using Refit;
+using Refit;
 using VANAS.Shared.Contracts;
 
 namespace VANAS.Client.Interfaces
@@ -19,5 +19,14 @@ namespace VANAS.Client.Interfaces
 
         [Post("/api/sessions/{id}/end")]
         Task<IApiResponse> EndSession(int id);
+
+        [Get("/api/profile/me")]
+        Task<ApiResponse<ProfileInfo>> GetProfile();
+
+        [Put("/api/profile/me")]
+        Task<ApiResponse<ProfileInfo>> UpdateProfile([Body] UpdateProfileRequest request);
+
+        [Get("/api/profile/me/sessions")]
+        Task<ApiResponse<List<SessionHistoryItem>>> GetSessionHistory([Query] int take = 20);
     }
 }

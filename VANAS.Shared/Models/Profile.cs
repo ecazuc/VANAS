@@ -4,6 +4,8 @@ namespace VANAS.Shared.Models
     {
         public int UserId { get; set; }
         public string DisplayName { get; set; } = string.Empty;
-        public string? AvatarUrl { get; set; }
+
+        /// <summary>Key of one of the preset avatars (see <c>VANAS.Shared.Contracts.Avatars</c>).</summary>
+        public string AvatarKey { get; set; } = "neon-yellow";
     }
 }

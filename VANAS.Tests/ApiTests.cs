@@ -219,6 +219,78 @@ public class ApiTests : IClassFixture<VanasFactory>
     }
 
     [Fact]
+    public async Task New_account_has_a_default_profile_and_can_change_pseudo_and_avatar()
+    {
+        var (_, client) = await NewClientUserAsync("profiled", 0);
+
+        var profile = (await client.GetFromJsonAsync<ProfileInfo>("/api/profile/me", Json))!;
+        Assert.Equal("profiled", profile.DisplayName);
+        Assert.Equal(Avatars.Default, profile.AvatarKey);
+
+        var res = await client.PutAsJsonAsync("/api/profile/me", new UpdateProfileRequest("Shadow Fox", "cyan"), Json);
+        res.EnsureSuccessStatusCode();
+        var updated = (await res.Content.ReadFromJsonAsync<ProfileInfo>(Json))!;
+        Assert.Equal("Shadow Fox", updated.DisplayName);
+        Assert.Equal("cyan", updated.AvatarKey);
+    }
+
+    [Theory]
+    [InlineData("ab", "cyan")]            // too short
+    [InlineData("bad<script>", "cyan")]   // forbidden characters
+    [InlineData("Valid Name", "nope")]    // unknown avatar
+    public async Task Invalid_profile_updates_are_rejected(string name, string avatar)
+    {
+        var (_, client) = await NewClientUserAsync("strict" + Math.Abs(name.GetHashCode() % 1000), 0);
+        var res = await client.PutAsJsonAsync("/api/profile/me", new UpdateProfileRequest(name, avatar), Json);
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Pseudo_must_be_unique_ignoring_case()
+    {
+        var (_, first) = await NewClientUserAsync("uniq_a", 0);
+        var (_, second) = await NewClientUserAsync("uniq_b", 0);
+
+        (await first.PutAsJsonAsync("/api/profile/me", new UpdateProfileRequest("Ghost Rider", "red"), Json)).EnsureSuccessStatusCode();
+        var clash = await second.PutAsJsonAsync("/api/profile/me", new UpdateProfileRequest("ghost rider", "red"), Json);
+        Assert.Equal(HttpStatusCode.BadRequest, clash.StatusCode);
+    }
+
+    [Fact]
+    public async Task Profile_reports_time_played_and_session_history()
+    {
+        var (_, client) = await NewClientUserAsync("historian", 30);
+        var started = (await (await client.PostAsJsonAsync("/api/sessions/start", new StartSessionRequest("PC-HIST"), Json))
+            .Content.ReadFromJsonAsync<SessionInfo>(Json))!;
+        await Task.Delay(1200);
+        (await client.PostAsync($"/api/sessions/{started.SessionId}/end", null)).EnsureSuccessStatusCode();
+
+        var profile = (await client.GetFromJsonAsync<ProfileInfo>("/api/profile/me", Json))!;
+        Assert.Equal(1, profile.SessionCount);
+        Assert.InRange(profile.TotalMinutesPlayed, 0.01, 0.2);
+
+        var history = (await client.GetFromJsonAsync<List<SessionHistoryItem>>("/api/profile/me/sessions", Json))!;
+        var item = Assert.Single(history);
+        Assert.Equal("PC-HIST", item.StationName);
+        Assert.Equal(SessionEndReason.UserLogout, item.EndReason);
+    }
+
+    [Fact]
+    public async Task Dates_are_sent_as_UTC_with_a_Z_suffix()
+    {
+        var (_, client) = await NewClientUserAsync("utcuser", 10);
+        (await client.PostAsJsonAsync("/api/sessions/start", new StartSessionRequest("PC-UTC"), Json)).EnsureSuccessStatusCode();
+        var raw = await client.GetStringAsync("/api/profile/me/sessions");
+        Assert.Matches("\"startedAt\":\"[^\"]+Z\"", raw);
+    }
+
+    [Fact]
+    public async Task Profile_endpoints_require_authentication()
+    {
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _factory.CreateClient().GetAsync("/api/profile/me")).StatusCode);
+    }
+
+    [Fact]
     public async Task Staff_cannot_change_roles_or_delete_users()
     {
         var admin = await AdminAsync();

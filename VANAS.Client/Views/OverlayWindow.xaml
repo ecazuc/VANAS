@@ -1,0 +1,15 @@
+<Window x:Class="VANAS.Client.Views.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
+        ShowInTaskbar="False" ShowActivated="False" Topmost="True" Focusable="False"
+        SizeToContent="WidthAndHeight" SourceInitialized="Window_SourceInitialized" SizeChanged="Window_SizeChanged">
+    <Border Background="#E616181C" BorderBrush="{StaticResource AccentBrush}" BorderThickness="0,0,0,2" Padding="16,6">
+        <StackPanel>
+            <TextBlock x:Name="lblTime" Text="00:00:00" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center"
+                       Foreground="{StaticResource AccentBrush}"/>
+            <TextBlock x:Name="lblWarning" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center"
+                       Foreground="{StaticResource DangerBrush}" Visibility="Collapsed"/>
+        </StackPanel>
+    </Border>
+</Window>

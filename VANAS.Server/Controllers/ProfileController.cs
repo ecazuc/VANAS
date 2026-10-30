@@ -1,0 +1,90 @@
+using System.Security.Claims;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using VANAS.Server.Data;
+using VANAS.Server.Services;
+using VANAS.Shared.Contracts;
+using VANAS.Shared.Models;
+
+namespace VANAS.Server.Controllers
+{
+    [ApiController]
+    [Authorize]
+    [Route("api/profile")]
+    public class ProfileController : ControllerBase
+    {
+        private static readonly Regex AllowedName = new(@"^[\p{L}\p{N}][\p{L}\p{N} _.\-]{1,22}[\p{L}\p{N}]$", RegexOptions.Compiled);
+
+        private readonly AppDbContext _db;
+        private readonly BalanceService _balance;
+
+        public ProfileController(AppDbContext db, BalanceService balance)
+        {
+            _db = db;
+            _balance = balance;
+        }
+
+        private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMine()
+        {
+            var user = await _db.Users.Include(u => u.Profile).FirstOrDefaultAsync(u => u.Id == UserId);
+            if (user == null) return Unauthorized();
+            return Ok(await BuildAsync(user));
+        }
+
+        [HttpPut("me")]
+        public async Task<IActionResult> UpdateMine([FromBody] UpdateProfileRequest request)
+        {
+            var name = request.DisplayName.Trim();
+            if (!AllowedName.IsMatch(name))
+                return BadRequest("Le pseudo doit faire 3 à 24 caractères (lettres, chiffres, espace, _ . -).");
+            if (!Avatars.IsValid(request.AvatarKey))
+                return BadRequest("Avatar inconnu.");
+
+            var user = await _db.Users.Include(u => u.Profile).FirstOrDefaultAsync(u => u.Id == UserId);
+            if (user == null) return Unauthorized();
+
+            var lower = name.ToLower();
+            if (await _db.Profiles.AnyAsync(p => p.UserId != user.Id && p.DisplayName.ToLower() == lower))
+                return BadRequest("Ce pseudo est déjà pris.");
+
+            var profile = user.Profile ??= new Profile { UserId = user.Id };
+            profile.DisplayName = name;
+            profile.AvatarKey = request.AvatarKey;
+            await _db.SaveChangesAsync();
+            return Ok(await BuildAsync(user));
+        }
+
+        [HttpGet("me/sessions")]
+        public async Task<IActionResult> GetMySessions([FromQuery] int take = 20)
+        {
+            take = Math.Clamp(take, 1, 50);
+            var items = await _db.Sessions
+                .Where(s => s.UserId == UserId)
+                .OrderByDescending(s => s.StartedAt)
+                .Take(take)
+                .Select(s => new SessionHistoryItem(s.StartedAt, s.EndedAt, s.MinutesConsumed, s.Station!.Name, s.EndReason))
+                .ToListAsync();
+            return Ok(items);
+        }
+
+        private async Task<ProfileInfo> BuildAsync(User user)
+        {
+            var sessions = _db.Sessions.Where(s => s.UserId == user.Id);
+            var total = await sessions.SumAsync(s => (double?)s.MinutesConsumed) ?? 0;
+            var count = await sessions.CountAsync();
+            return new ProfileInfo(
+                user.Username,
+                user.Profile?.DisplayName ?? user.Username,
+                user.Profile?.AvatarKey ?? Avatars.Default,
+                await _balance.GetMinutesAsync(user.Id),
+                total,
+                count,
+                user.CreatedAt);
+        }
+    }
+}

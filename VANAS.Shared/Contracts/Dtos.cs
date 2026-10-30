@@ -44,3 +44,24 @@ namespace VANAS.Shared.Contracts
 
     public record CreateUserRequest(string Username, string Password, double InitialMinutes);
 }
+
+namespace VANAS.Shared.Contracts
+{
+    public record ProfileInfo(
+        string Username,
+        string DisplayName,
+        string AvatarKey,
+        double MinutesLeft,
+        double TotalMinutesPlayed,
+        int SessionCount,
+        DateTime MemberSince);
+
+    public record UpdateProfileRequest(string DisplayName, string AvatarKey);
+
+    public record SessionHistoryItem(
+        DateTime StartedAt,
+        DateTime? EndedAt,
+        double MinutesConsumed,
+        string StationName,
+        VANAS.Shared.Models.SessionEndReason? EndReason);
+}

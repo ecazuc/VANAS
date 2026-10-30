@@ -1,23 +1,38 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
+using VANAS.Client.Controls;
 using VANAS.Client.Services;
+using VANAS.Shared.Contracts;
 using VANAS.Shared.Models;
 
 namespace VANAS.Client.Views
 {
     public partial class DashboardWindow : Window
     {
+        private record AvatarChoice(string Key, Brush Brush);
+        private record HistoryRow(string When, string Station, string Duration, string Reason);
+
         private readonly double _initialMinutes;
+        private readonly OverlayWindow _overlay = new();
+        private readonly DispatcherTimer _bannerTimer = new() { Interval = TimeSpan.FromSeconds(10) };
+        private readonly string _username;
         private bool _leaving;
         private bool _allowClose;
+        private string _selectedAvatar = Avatars.Default;
+        private string _displayName;
 
         public DashboardWindow(string username, double initialMinutes)
         {
             InitializeComponent();
+            _username = username;
+            _displayName = username;
             lblUser.Text = username.ToUpper();
+            avatarSmall.Set(Avatars.Default, username);
             _initialMinutes = Math.Max(initialMinutes, 1);
 
             // Placeholders: real detection of installed launchers/games arrives in PC-4.
@@ -26,13 +41,34 @@ namespace VANAS.Client.Views
                 new() { Title = "STEAM", ExePath = "steam://open/main" },
                 new() { Title = "EPIC GAMES", ExePath = "com.epicgames.launcher://" }
             };
+            listAvatars.ItemsSource = Avatars.Colors.Select(c => new AvatarChoice(c.Key, AvatarBadge.BrushFor(c.Key))).ToList();
 
             App.Session.TimeChanged += OnTimeChanged;
             App.Session.OnlineChanged += OnOnlineChanged;
             App.Session.Ended += OnEnded;
-            Loaded += (_, _) => Kiosk.EnterSession(this);
+            App.Session.TimeWarning += OnTimeWarning;
+
+            // The overlay shows the clock over games, and gets out of the way while this window is in front.
+            Activated += (_, _) => _overlay.Hide();
+            Deactivated += (_, _) => { if (!_leaving) _overlay.Show(); };
+            _bannerTimer.Tick += (_, _) =>
+            {
+                _bannerTimer.Stop();
+                bannerWarning.Visibility = Visibility.Collapsed;
+            };
+
+            Loaded += async (_, _) =>
+            {
+                Kiosk.EnterSession(this);
+                await LoadProfileAsync();
+            };
             Closing += (_, e) => e.Cancel = Kiosk.Enabled && !_allowClose && !App.Exiting;
-            Closed += (_, _) => Unsubscribe();
+            Closed += (_, _) =>
+            {
+                Unsubscribe();
+                _bannerTimer.Stop();
+                _overlay.Close();
+            };
             OnTimeChanged(App.Session.MinutesLeft);
         }
 
@@ -41,13 +77,33 @@ namespace VANAS.Client.Views
             App.Session.TimeChanged -= OnTimeChanged;
             App.Session.OnlineChanged -= OnOnlineChanged;
             App.Session.Ended -= OnEnded;
+            App.Session.TimeWarning -= OnTimeWarning;
+        }
+
+        // ---------- Time ----------
+
+        private static string FormatTime(double minutes)
+        {
+            var t = TimeSpan.FromMinutes(minutes);
+            return $"{(int)t.TotalHours:D2}:{t.Minutes:D2}:{t.Seconds:D2}";
         }
 
         private void OnTimeChanged(double minutes)
         {
-            var t = TimeSpan.FromMinutes(minutes);
-            lblTime.Text = $"{(int)t.TotalHours:D2}:{t.Minutes:D2}:{t.Seconds:D2}";
+            var text = FormatTime(minutes);
+            lblTime.Text = text;
+            _overlay.SetTime(text);
             barTime.Value = Math.Clamp(minutes / _initialMinutes, 0, 1);
+        }
+
+        private void OnTimeWarning(int minutes)
+        {
+            var message = minutes == 1 ? "Il vous reste 1 minute !" : $"Il vous reste {minutes} minutes";
+            lblWarning.Text = message;
+            bannerWarning.Visibility = Visibility.Visible;
+            _bannerTimer.Stop();
+            _bannerTimer.Start();
+            _overlay.ShowWarning(message);
         }
 
         private void OnOnlineChanged(bool online)
@@ -79,12 +135,129 @@ namespace VANAS.Client.Views
         {
             if (_leaving && notice != null) return;
             _leaving = true;
+            _overlay.Hide();
             App.Token = null;
             new LoginWindow(notice).Show();
             _allowClose = true;
             if (Kiosk.Enabled) _ = Task.Run(() => ProcessCleaner.KillStartedSince(App.SessionStartedAt));
             Close();
         }
+
+        // ---------- Tabs ----------
+
+        private void tabGames_Click(object sender, RoutedEventArgs e) => ShowTab(profile: false);
+
+        private async void tabProfile_Click(object sender, RoutedEventArgs e)
+        {
+            ShowTab(profile: true);
+            await LoadProfileAsync();
+            await LoadHistoryAsync();
+        }
+
+        private void ShowTab(bool profile)
+        {
+            panelGames.Visibility = profile ? Visibility.Collapsed : Visibility.Visible;
+            panelProfile.Visibility = profile ? Visibility.Visible : Visibility.Collapsed;
+            underGames.Visibility = profile ? Visibility.Hidden : Visibility.Visible;
+            underProfile.Visibility = profile ? Visibility.Visible : Visibility.Hidden;
+        }
+
+        // ---------- Profile ----------
+
+        private async Task LoadProfileAsync()
+        {
+            try
+            {
+                var response = await App.Api.GetProfile();
+                if (!response.IsSuccessStatusCode || response.Content == null) return;
+                var p = response.Content;
+
+                _displayName = p.DisplayName;
+                _selectedAvatar = p.AvatarKey;
+                lblUser.Text = p.DisplayName.ToUpper();
+                avatarSmall.Set(p.AvatarKey, p.DisplayName);
+                avatarBig.Set(p.AvatarKey, p.DisplayName);
+                if (!txtPseudo.IsKeyboardFocused) txtPseudo.Text = p.DisplayName;
+
+                var played = TimeSpan.FromMinutes(p.TotalMinutesPlayed);
+                statPlayed.Text = played.TotalHours >= 1 ? $"{(int)played.TotalHours} h {played.Minutes:D2}" : $"{(int)played.TotalMinutes} min";
+                statSessions.Text = p.SessionCount.ToString(CultureInfo.CurrentCulture);
+                statSince.Text = p.MemberSince.ToLocalTime().ToString("dd/MM/yyyy", CultureInfo.CurrentCulture);
+            }
+            catch
+            {
+                // Profile is a nicety: the session keeps working without it.
+            }
+        }
+
+        private async Task LoadHistoryAsync()
+        {
+            try
+            {
+                var response = await App.Api.GetSessionHistory(20);
+                if (!response.IsSuccessStatusCode || response.Content == null) return;
+
+                var rows = response.Content.Select(s => new HistoryRow(
+                    s.StartedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm", CultureInfo.CurrentCulture),
+                    s.StationName,
+                    FormatMinutes(s.MinutesConsumed),
+                    s.EndedAt == null ? "en cours" : s.EndReason switch
+                    {
+                        SessionEndReason.TimeExpired => "temps écoulé",
+                        SessionEndReason.Kicked => "fermée par le staff",
+                        SessionEndReason.Replaced => "remplacée",
+                        _ => "déconnexion"
+                    })).ToList();
+
+                listHistory.ItemsSource = rows;
+                lblNoHistory.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch
+            {
+                // see LoadProfileAsync
+            }
+        }
+
+        private static string FormatMinutes(double minutes)
+        {
+            var t = TimeSpan.FromMinutes(minutes);
+            return t.TotalHours >= 1 ? $"{(int)t.TotalHours} h {t.Minutes:D2}" : $"{(int)t.TotalMinutes} min {t.Seconds:D2} s";
+        }
+
+        private void AvatarChoice_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.Tag is not string key) return;
+            _selectedAvatar = key;
+            avatarBig.Set(key, txtPseudo.Text.Length > 0 ? txtPseudo.Text : _displayName);
+        }
+
+        private async void btnSaveProfile_Click(object sender, RoutedEventArgs e)
+        {
+            lblProfileStatus.Foreground = (Brush)FindResource("MutedBrush");
+            lblProfileStatus.Text = "Enregistrement...";
+            try
+            {
+                var response = await App.Api.UpdateProfile(new UpdateProfileRequest(txtPseudo.Text, _selectedAvatar));
+                if (response.IsSuccessStatusCode)
+                {
+                    lblProfileStatus.Foreground = (Brush)FindResource("OkBrush");
+                    lblProfileStatus.Text = "Profil enregistré.";
+                    await LoadProfileAsync();
+                }
+                else
+                {
+                    lblProfileStatus.Foreground = (Brush)FindResource("DangerBrush");
+                    lblProfileStatus.Text = ApiErrors.Describe(response);
+                }
+            }
+            catch (Exception ex)
+            {
+                lblProfileStatus.Foreground = (Brush)FindResource("DangerBrush");
+                lblProfileStatus.Text = ApiErrors.Describe(ex);
+            }
+        }
+
+        // ---------- Games ----------
 
         private void Launcher_Click(object sender, RoutedEventArgs e)
         {

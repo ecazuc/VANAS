@@ -61,14 +61,19 @@ namespace VANAS.Server.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("AvatarUrl")
+                    b.Property<string>("AvatarKey")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.HasKey("UserId");
+
+                    b.HasIndex("DisplayName")
+                        .IsUnique();
 
                     b.ToTable("Profiles");
                 });

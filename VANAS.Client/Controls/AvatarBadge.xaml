@@ -1,0 +1,10 @@
+<UserControl x:Class="VANAS.Client.Controls.AvatarBadge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             SizeChanged="UserControl_SizeChanged">
+    <Grid>
+        <Ellipse x:Name="disc" Fill="{StaticResource AccentBrush}"/>
+        <TextBlock x:Name="initial" Text="?" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Foreground="{StaticResource BgBrush}" FontWeight="Bold"/>
+    </Grid>
+</UserControl>

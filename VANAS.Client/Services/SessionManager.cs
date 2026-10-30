@@ -34,6 +34,7 @@ namespace VANAS.Client.Services
         private DateTime _syncedAt;
         private DateTime? _offlineSince;
         private bool _busy;
+        private readonly TimeWarningTracker _warnings = new();
         private bool _syncAgain;
         private bool _running;
         private HubConnection? _hub;
@@ -51,12 +52,16 @@ namespace VANAS.Client.Services
         public event Action<bool>? OnlineChanged;
         public event Action<SessionEndedReason>? Ended;
 
+        /// <summary>Raised once when 10, 5 and 1 minute(s) remain (re-armed if staff adds time).</summary>
+        public event Action<int>? TimeWarning;
+
         public double MinutesLeft => Math.Max(0, _serverMinutes - (DateTime.UtcNow - _syncedAt).TotalMinutes);
 
         public void Start(SessionInfo info)
         {
             _sessionId = info.SessionId;
             Sync(info.MinutesLeft);
+            _warnings.Reset(info.MinutesLeft);
             _offlineSince = null;
             _running = true;
             _beat.Interval = HeartbeatInterval;
@@ -126,6 +131,7 @@ namespace VANAS.Client.Services
         {
             var left = MinutesLeft;
             TimeChanged?.Invoke(left);
+            if (left > 0 && _running && _warnings.Check(left) is int threshold) TimeWarning?.Invoke(threshold);
 
             if (left <= 0 && _running)
             {

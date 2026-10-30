@@ -140,3 +140,18 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 - **Hybride** : petit VPS externe pour site public, blog, événements, mobile, messagerie ; synchronisation par connexion sortante depuis le café (aucune entrée internet sur le serveur local). À mettre en place à W-5 / M-2.
 - **Tarification** : paiement à l'heure (crédits d'heures) **ou** forfait mensuel. `TimeLedger` + `Offer` (type, durée/heures incluses, prix) + `Subscription` (début/fin). Tarifs non figés : données modifiables par le staff.
 - **Nom & logo** : provisoires. Centralisés (ressources/config) pour remplacement final sans toucher au code.
+
+---
+
+## Avancement (mis à jour au fil des étapes)
+
+| Étape | État | Branche |
+|---|---|---|
+| Étape 0 — fondations serveur/sécurité | Validée, poussée | `etape-0` |
+| PC-1 — client login/session | Validée, poussée | `etape-0` |
+| W-1 — site vitrine + PC-6 console staff | Validées, poussées | `etape-0` |
+| PC-2 — mode kiosque | Code terminé, **en attente de test en VM** (VirtualBox, `tools/Create-TestVM.ps1`) | `pc-2` |
+| PC-3 — profil, overlay en jeu, alertes 10/5/1 min | Code terminé, à tester | `pc-3` |
+| PC-4 — bibliothèque et lancement de jeux | À faire | |
+| PC-5 — installation de jeux | À faire | |
+| W-2, W-3, W-4, W-5 / M-1 à M-5 / PC-7 | À faire | |
