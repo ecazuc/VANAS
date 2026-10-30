@@ -1,0 +1,27 @@
+@implements IDisposable
+
+@code {
+    /// <summary>Raised every <see cref="Seconds"/>; the receiving page re-renders afterwards.</summary>
+    [Parameter] public EventCallback OnTick { get; set; }
+    [Parameter] public int Seconds { get; set; } = 5;
+
+    private readonly CancellationTokenSource _cts = new();
+
+    protected override void OnInitialized() => _ = LoopAsync();
+
+    private async Task LoopAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(Seconds));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_cts.Token))
+                await OnTick.InvokeAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // page left
+        }
+    }
+
+    public void Dispose() => _cts.Cancel();
+}

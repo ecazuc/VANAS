@@ -14,6 +14,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VANAS.Tests", "VANAS.Tests\VANAS.Tests.csproj", "{42F66D22-C447-4F04-89DD-ED5776B38EF5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VANAS.Web", "VANAS.Web\VANAS.Web.csproj", "{93ACF5EA-0066-436A-953D-E06A8F6F4277}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +36,14 @@ Global
 		{8CB42125-A526-4981-9020-F4F0FC470562}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8CB42125-A526-4981-9020-F4F0FC470562}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8CB42125-A526-4981-9020-F4F0FC470562}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42F66D22-C447-4F04-89DD-ED5776B38EF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42F66D22-C447-4F04-89DD-ED5776B38EF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42F66D22-C447-4F04-89DD-ED5776B38EF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42F66D22-C447-4F04-89DD-ED5776B38EF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93ACF5EA-0066-436A-953D-E06A8F6F4277}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93ACF5EA-0066-436A-953D-E06A8F6F4277}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93ACF5EA-0066-436A-953D-E06A8F6F4277}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93ACF5EA-0066-436A-953D-E06A8F6F4277}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

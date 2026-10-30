@@ -1,0 +1,179 @@
+@page "/admin/comptes"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+
+<PageTitle>Comptes - VANAS staff</PageTitle>
+
+<AdminShell Title="Comptes">
+    <AutoRefresh OnTick="LoadAsync" Seconds="4" />
+    @if (_message != null)
+    {
+        <p class="msg @(_messageIsError ? "error" : "ok")">@_message</p>
+    }
+
+    <form class="card inline-form" @onsubmit="CreateAsync">
+        <h3>Créer un compte</h3>
+        <div class="row">
+            <input placeholder="Identifiant" @bind="_newName" />
+            <input placeholder="Mot de passe (8 car. min)" @bind="_newPassword" />
+            <input type="number" min="0" step="15" placeholder="Minutes offertes" @bind="_newMinutes" />
+            <button class="btn" type="submit">Créer</button>
+        </div>
+    </form>
+
+    <input class="search" placeholder="Rechercher un compte..." @bind="_search" @bind:event="oninput" />
+
+    <table class="table">
+        <thead>
+            <tr><th>Compte</th><th>Rôle</th><th>Temps restant</th><th>Statut</th><th>Ajouter du temps</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Filtered)
+            {
+                <tr>
+                    <td><strong>@u.Username</strong></td>
+                    <td>
+                        @if (Auth.IsAdmin)
+                        {
+                            <select value="@u.Role" @onchange="e => SetRoleAsync(u, e.Value?.ToString())">
+                                @foreach (var r in Enum.GetValues<UserRole>())
+                                {
+                                    <option value="@r">@r</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            @u.Role
+                        }
+                    </td>
+                    <td>@Format.Minutes(u.MinutesLeft)</td>
+                    <td><span class="chip @(u.IsOnline ? "chip-on" : "chip-off")">@(u.IsOnline ? "EN LIGNE" : "HORS LIGNE")</span></td>
+                    <td class="actions">
+                        <input type="number" class="mini" step="15" value="@AmountFor(u.Id)" @onchange="e => SetAmount(u.Id, e.Value)" />
+                        <button class="btn small" @onclick="() => AddTimeAsync(u)">+ min</button>
+                    </td>
+                    <td class="actions">
+                        @if (u.IsOnline)
+                        {
+                            <button class="btn small danger" @onclick="() => KickAsync(u)">Kicker</button>
+                        }
+                        @if (Auth.IsAdmin)
+                        {
+                            <button class="btn small danger" @onclick="() => DeleteAsync(u)">
+                                @(_confirmDelete == u.Id ? "Confirmer ?" : "Supprimer")
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</AdminShell>
+
+@code {
+    private List<UserSummary> _users = new();
+    private readonly Dictionary<int, double> _amounts = new();
+    private string _search = string.Empty;
+    private string _newName = string.Empty;
+    private string _newPassword = string.Empty;
+    private double _newMinutes = 60;
+    private int? _confirmDelete;
+    private string? _message;
+    private bool _messageIsError;
+
+    private IEnumerable<UserSummary> Filtered =>
+        _users.Where(u => u.Username.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    private double AmountFor(int id) => _amounts.TryGetValue(id, out var m) ? m : 60;
+
+    private void SetAmount(int id, object? value)
+    {
+        if (double.TryParse(value?.ToString(), out var m)) _amounts[id] = m;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Auth.Token == null) return;
+        var result = await Api.GetUsersAsync();
+        if (result.Ok && result.Value != null) _users = result.Value;
+        else Report(result.Error, isError: true);
+    }
+
+    private void Report(string? text, bool isError)
+    {
+        _message = text;
+        _messageIsError = isError;
+    }
+
+    private async Task CreateAsync()
+    {
+        var name = _newName.Trim();
+        var created = await Api.RegisterAsync(name, _newPassword);
+        if (!created.Ok)
+        {
+            Report(created.Error, true);
+            return;
+        }
+
+        await LoadAsync();
+        if (_newMinutes > 0 && _users.FirstOrDefault(u => u.Username.Equals(name, StringComparison.OrdinalIgnoreCase)) is { } user)
+        {
+            var credit = await Api.AddTimeAsync(user.Id, _newMinutes, "Crédit initial");
+            if (!credit.Ok)
+            {
+                Report($"Compte créé, mais le crédit a échoué : {credit.Error}", true);
+                return;
+            }
+        }
+
+        Report($"Compte « {name} » créé.", false);
+        _newName = _newPassword = string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task AddTimeAsync(UserSummary user)
+    {
+        var minutes = AmountFor(user.Id);
+        var result = await Api.AddTimeAsync(user.Id, minutes, "Console staff");
+        Report(result.Ok ? $"{(minutes > 0 ? "+" : "")}{minutes:0} min pour {user.Username}." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+
+    private async Task KickAsync(UserSummary user)
+    {
+        var result = await Api.KickAsync(user.Id);
+        Report(result.Ok ? $"{user.Username} est déconnecté." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+
+    private async Task SetRoleAsync(UserSummary user, string? role)
+    {
+        if (!Enum.TryParse<UserRole>(role, out var parsed)) return;
+        var result = await Api.SetRoleAsync(user.Id, parsed);
+        Report(result.Ok ? $"{user.Username} est maintenant {parsed}." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(UserSummary user)
+    {
+        if (_confirmDelete != user.Id)
+        {
+            _confirmDelete = user.Id;
+            return;
+        }
+
+        _confirmDelete = null;
+        var result = await Api.DeleteUserAsync(user.Id);
+        Report(result.Ok ? $"Compte « {user.Username} » supprimé." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+}

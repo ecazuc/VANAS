@@ -1,0 +1,59 @@
+@page "/admin/login"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Connexion staff - VANAS</PageTitle>
+
+<div class="login-wrap">
+    <form class="card login-card" @onsubmit="SubmitAsync">
+        <div class="brand big">VANAS</div>
+        <p class="muted label center">CONSOLE STAFF</p>
+
+        <label>Identifiant</label>
+        <input @bind="_username" autocomplete="username" />
+
+        <label>Mot de passe</label>
+        <input type="password" @bind="_password" autocomplete="current-password" />
+
+        @if (_error != null)
+        {
+            <p class="msg error">@_error</p>
+        }
+
+        <button class="btn block" type="submit" disabled="@_busy">@(_busy ? "Connexion..." : "Connexion")</button>
+    </form>
+</div>
+
+@code {
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private string? _error;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Auth.GetAuthenticationStateAsync();
+        if (state.User.IsInRole("Staff") || state.User.IsInRole("Admin")) Navigation.NavigateTo("/admin");
+    }
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        _error = null;
+        var result = await Api.LoginAsync(_username, _password);
+
+        if (!result.Ok || result.Value == null)
+            _error = result.Error ?? "Connexion impossible.";
+        else if (result.Value.Role == UserRole.Client)
+            _error = "Accès réservé au staff.";
+        else
+        {
+            await Auth.SignInAsync(result.Value);
+            Navigation.NavigateTo("/admin");
+        }
+        _busy = false;
+    }
+}
