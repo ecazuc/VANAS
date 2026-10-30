@@ -63,6 +63,37 @@ namespace VANAS.Web.Services
         public Task<ApiResult> DeleteGameAsync(int id) =>
             SendAsync(HttpMethod.Delete, $"api/catalog/{id}");
 
+        // ----- Blog (public reads need no token) -----
+
+        public Task<ApiResult<ArticlePage>> GetArticlesAsync(int page, string? category, string? tag, string? search)
+        {
+            var query = new List<string> { $"page={page}" };
+            if (!string.IsNullOrWhiteSpace(category)) query.Add("category=" + Uri.EscapeDataString(category));
+            if (!string.IsNullOrWhiteSpace(tag)) query.Add("tag=" + Uri.EscapeDataString(tag));
+            if (!string.IsNullOrWhiteSpace(search)) query.Add("q=" + Uri.EscapeDataString(search));
+            return SendAsync<ArticlePage>(HttpMethod.Get, "api/articles?" + string.Join('&', query), authenticated: false);
+        }
+
+        public Task<ApiResult<List<string>>> GetArticleCategoriesAsync() =>
+            SendAsync<List<string>>(HttpMethod.Get, "api/articles/categories", authenticated: false);
+
+        public Task<ApiResult<ArticleDetail>> GetArticleAsync(string slug) =>
+            SendAsync<ArticleDetail>(HttpMethod.Get, $"api/articles/{Uri.EscapeDataString(slug)}", authenticated: false);
+
+        public Task<ApiResult<List<ArticleSummary>>> GetManagedArticlesAsync() =>
+            SendAsync<List<ArticleSummary>>(HttpMethod.Get, "api/articles/manage");
+
+        public Task<ApiResult<ArticleDetail>> GetArticleForEditAsync(int id) =>
+            SendAsync<ArticleDetail>(HttpMethod.Get, $"api/articles/manage/{id}");
+
+        public Task<ApiResult<ArticleDetail>> SaveArticleAsync(int? id, SaveArticleRequest request) =>
+            id is int existing
+                ? SendAsync<ArticleDetail>(HttpMethod.Put, $"api/articles/{existing}", request)
+                : SendAsync<ArticleDetail>(HttpMethod.Post, "api/articles", request);
+
+        public Task<ApiResult> DeleteArticleAsync(int id) =>
+            SendAsync(HttpMethod.Delete, $"api/articles/{id}");
+
         public Task<ApiResult> RegisterAsync(string username, string password) =>
             SendAsync(HttpMethod.Post, "api/auth/register", new RegisterRequest(username, password), authenticated: false);
 

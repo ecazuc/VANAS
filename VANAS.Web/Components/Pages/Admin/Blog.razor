@@ -1,0 +1,83 @@
+@page "/admin/blog"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+
+<PageTitle>Blog - VANAS staff</PageTitle>
+
+<AdminShell Title="Blog">
+    <p><a class="btn" href="/admin/blog/nouveau">Nouvel article</a></p>
+
+    @if (_message != null)
+    {
+        <p class="msg @(_messageIsError ? "error" : "ok")">@_message</p>
+    }
+
+    <table class="table">
+        <thead>
+            <tr><th>Titre</th><th>Catégorie</th><th>Statut</th><th>Publié le</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var a in _articles)
+            {
+                <tr>
+                    <td><strong>@a.Title</strong><br /><span class="muted">/blog/@a.Slug</span></td>
+                    <td>@a.Category</td>
+                    <td><span class="chip @(a.IsPublished ? "chip-on" : "chip-off")">@(a.IsPublished ? "PUBLIÉ" : "BROUILLON")</span></td>
+                    <td class="muted">@(a.PublishedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                    <td class="actions">
+                        <a class="btn small" href="/admin/blog/@a.Id">Modifier</a>
+                        @if (a.IsPublished)
+                        {
+                            <a class="btn small" href="/blog/@a.Slug" target="_blank">Voir</a>
+                        }
+                        <button class="btn small danger" @onclick="() => DeleteAsync(a)">
+                            @(_confirmDelete == a.Id ? "Confirmer ?" : "Supprimer")
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (_articles.Count == 0)
+    {
+        <p class="muted">Aucun article. Créez le premier !</p>
+    }
+</AdminShell>
+
+@code {
+    private List<ArticleSummary> _articles = new();
+    private int? _confirmDelete;
+    private string? _message;
+    private bool _messageIsError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Auth.Token == null) return;
+        var result = await Api.GetManagedArticlesAsync();
+        if (result.Ok && result.Value != null) _articles = result.Value;
+        else { _message = result.Error; _messageIsError = true; }
+    }
+
+    private async Task DeleteAsync(ArticleSummary a)
+    {
+        if (_confirmDelete != a.Id)
+        {
+            _confirmDelete = a.Id;
+            return;
+        }
+
+        _confirmDelete = null;
+        var result = await Api.DeleteArticleAsync(a.Id);
+        _message = result.Ok ? $"« {a.Title} » supprimé." : result.Error;
+        _messageIsError = !result.Ok;
+        await LoadAsync();
+    }
+}

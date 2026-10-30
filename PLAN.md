@@ -154,4 +154,5 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 | PC-3 — profil, overlay en jeu, alertes 10/5/1 min | Code terminé, à tester | `pc-3` |
 | PC-4 — bibliothèque et lancement de jeux (catalogue serveur + console /admin/jeux, détection Steam/Epic/Riot) | Code terminé, à tester | `pc-4` |
 | PC-5 — installation de jeux (confirmation, progression Steam, espace disque, nettoyage des comptes launchers) | Code terminé, à tester | `pc-5` |
-| W-2, W-3, W-4, W-5 / M-1 à M-5 / PC-7 | À faire | |
+| W-2 — blog d'actus (Markdown sécurisé, éditeur staff avec aperçu, RSS) | Code terminé, à tester | `w-2` |
+| W-3, W-4, W-5 / M-1 à M-5 / PC-7 | À faire | |

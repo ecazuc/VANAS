@@ -1,0 +1,113 @@
+@page "/admin/blog/nouveau"
+@page "/admin/blog/{Id:int}"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Éditeur - VANAS staff</PageTitle>
+
+<AdminShell Title="@(Id == null ? "Nouvel article" : "Modifier l'article")">
+    <p><a href="/admin/blog">&larr; Retour à la liste</a></p>
+
+    @if (_message != null)
+    {
+        <p class="msg @(_messageIsError ? "error" : "ok")">@_message</p>
+    }
+
+    <div class="editor">
+        <div class="card">
+            <label>Titre</label>
+            <input @bind="_title" maxlength="120" />
+
+            <label>Résumé (affiché dans la liste, 400 caractères max)</label>
+            <input @bind="_summary" maxlength="400" />
+
+            <div class="row two">
+                <div>
+                    <label>Catégorie</label>
+                    <input @bind="_category" list="categories" maxlength="40" />
+                    <datalist id="categories">
+                        <option value="Actus jeux" />
+                        <option value="Événements" />
+                        <option value="Guides" />
+                        <option value="Le café" />
+                    </datalist>
+                </div>
+                <div>
+                    <label>Tags (séparés par des virgules)</label>
+                    <input @bind="_tags" maxlength="200" />
+                </div>
+            </div>
+
+            <label>Image de couverture (adresse http/https, optionnelle)</label>
+            <input @bind="_cover" />
+
+            <label>Contenu (Markdown)</label>
+            <textarea @bind="_content" @bind:event="oninput" rows="18"></textarea>
+
+            <label class="check">
+                <input type="checkbox" @bind="_published" /> Publier cet article (visible sur le site)
+            </label>
+
+            <button class="btn" @onclick="SaveAsync" disabled="@_busy">@(_busy ? "Enregistrement..." : "Enregistrer")</button>
+        </div>
+
+        <div class="card">
+            <h3>Aperçu</h3>
+            <div class="prose">@((MarkupString)MarkdownRenderer.ToHtml(_content))</div>
+        </div>
+    </div>
+</AdminShell>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private string _title = string.Empty, _summary = string.Empty, _content = string.Empty;
+    private string _category = "Actus jeux", _tags = string.Empty, _cover = string.Empty;
+    private bool _published, _busy;
+    private string? _message;
+    private bool _messageIsError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        if (Id is not int id || Auth.Token == null) return;
+
+        var result = await Api.GetArticleForEditAsync(id);
+        if (!result.Ok || result.Value == null)
+        {
+            _message = result.Error;
+            _messageIsError = true;
+            return;
+        }
+
+        var a = result.Value;
+        (_title, _summary, _content, _category, _tags, _cover, _published) =
+            (a.Title, a.Summary, a.ContentMarkdown, a.Category, a.Tags, a.CoverUrl ?? string.Empty, a.IsPublished);
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        var result = await Api.SaveArticleAsync(Id, new SaveArticleRequest(_title, _summary, _content, _category, _tags, _cover, _published));
+        _busy = false;
+
+        if (!result.Ok || result.Value == null)
+        {
+            _message = result.Error;
+            _messageIsError = true;
+            return;
+        }
+
+        if (Id == null)
+        {
+            Navigation.NavigateTo($"/admin/blog/{result.Value.Id}");
+            return;
+        }
+
+        _message = _published ? "Article enregistré et publié." : "Brouillon enregistré.";
+        _messageIsError = false;
+    }
+}

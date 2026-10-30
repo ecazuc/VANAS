@@ -1,0 +1,74 @@
+@page "/blog/{Slug}"
+@inject ApiClient Api
+
+<PageTitle>@(_article?.Title ?? "Article") - VANAS</PageTitle>
+@if (_article != null)
+{
+    <HeadContent>
+        <meta name="description" content="@_article.Summary" />
+        <meta property="og:title" content="@_article.Title" />
+        <meta property="og:description" content="@_article.Summary" />
+        @if (!string.IsNullOrEmpty(_article.CoverUrl))
+        {
+            <meta property="og:image" content="@_article.CoverUrl" />
+        }
+    </HeadContent>
+}
+
+<section class="container page article">
+    <p><a href="/blog">&larr; Toutes les actus</a></p>
+
+    @if (_missing)
+    {
+        <h1>Article introuvable</h1>
+        <p class="muted">Cet article n'existe pas ou n'est plus publié.</p>
+    }
+    else if (_article != null)
+    {
+        <p class="eyebrow">@_article.Category @(_article.PublishedAt is DateTime d ? "· " + d.ToLocalTime().ToString("dd/MM/yyyy") : "")</p>
+        <h1>@_article.Title</h1>
+        @if (!string.IsNullOrEmpty(_article.CoverUrl))
+        {
+            <img class="cover big" src="@_article.CoverUrl" alt="" />
+        }
+        <div class="prose">@((MarkupString)_html)</div>
+
+        @if (_tags.Length > 0)
+        {
+            <p class="chips">
+                @foreach (var t in _tags)
+                {
+                    <a class="pill" href="/blog?tag=@Uri.EscapeDataString(t)">#@t</a>
+                }
+            </p>
+        }
+    }
+    else
+    {
+        <p class="msg error">L'article est momentanément indisponible.</p>
+    }
+</section>
+
+@code {
+    [Parameter] public string Slug { get; set; } = string.Empty;
+
+    private ArticleDetail? _article;
+    private string _html = string.Empty;
+    private string[] _tags = Array.Empty<string>();
+    private bool _missing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Api.GetArticleAsync(Slug);
+        if (result.Ok && result.Value != null)
+        {
+            _article = result.Value;
+            _html = MarkdownRenderer.ToHtml(_article.ContentMarkdown);
+            _tags = _article.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        }
+        else if (result.Error?.Contains("introuvable", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            _missing = true;
+        }
+    }
+}

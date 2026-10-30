@@ -342,6 +342,86 @@ public class ApiTests : IClassFixture<VanasFactory>
         Assert.Equal(HttpStatusCode.BadRequest, dup.StatusCode);
     }
 
+    private static SaveArticleRequest Post(string title, bool published = true, string category = "Actus jeux", string tags = "fps, esport") =>
+        new(title, "Résumé", "# Contenu\n\nDu **markdown**.", category, tags, null, published);
+
+    [Fact]
+    public async Task Staff_publishes_an_article_that_the_public_can_read_but_drafts_stay_private()
+    {
+        var admin = await AdminAsync();
+        var anon = _factory.CreateClient();
+
+        var draft = (await (await admin.PostAsJsonAsync("/api/articles", Post("Brouillon secret", published: false), Json))
+            .Content.ReadFromJsonAsync<ArticleDetail>(Json))!;
+        var live = (await (await admin.PostAsJsonAsync("/api/articles", Post("Tournoi de l'été"), Json))
+            .Content.ReadFromJsonAsync<ArticleDetail>(Json))!;
+
+        Assert.Equal("tournoi-de-l-ete", live.Slug);
+        Assert.NotNull(live.PublishedAt);
+        Assert.Null(draft.PublishedAt);
+
+        Assert.Equal(HttpStatusCode.NotFound, (await anon.GetAsync($"/api/articles/{draft.Slug}")).StatusCode);
+        var read = (await anon.GetFromJsonAsync<ArticleDetail>($"/api/articles/{live.Slug}", Json))!;
+        Assert.Contains("markdown", read.ContentMarkdown);
+
+        var list = (await anon.GetFromJsonAsync<ArticlePage>("/api/articles", Json))!;
+        Assert.Contains(list.Items, a => a.Slug == live.Slug);
+        Assert.DoesNotContain(list.Items, a => a.Slug == draft.Slug);
+
+        // staff still sees the draft
+        var manage = (await admin.GetFromJsonAsync<List<ArticleSummary>>("/api/articles/manage", Json))!;
+        Assert.Contains(manage, a => a.Slug == draft.Slug && !a.IsPublished);
+    }
+
+    [Fact]
+    public async Task Article_slugs_are_unique_and_do_not_change_when_the_title_changes()
+    {
+        var admin = await AdminAsync();
+        var first = (await (await admin.PostAsJsonAsync("/api/articles", Post("Même titre"), Json)).Content.ReadFromJsonAsync<ArticleDetail>(Json))!;
+        var second = (await (await admin.PostAsJsonAsync("/api/articles", Post("Même titre"), Json)).Content.ReadFromJsonAsync<ArticleDetail>(Json))!;
+        Assert.Equal("meme-titre", first.Slug);
+        Assert.Equal("meme-titre-2", second.Slug);
+
+        var renamed = (await (await admin.PutAsJsonAsync($"/api/articles/{first.Id}", Post("Titre complètement différent"), Json))
+            .Content.ReadFromJsonAsync<ArticleDetail>(Json))!;
+        Assert.Equal("meme-titre", renamed.Slug);
+    }
+
+    [Fact]
+    public async Task Filtering_by_category_tag_and_search_works_on_published_articles()
+    {
+        var admin = await AdminAsync();
+        await admin.PostAsJsonAsync("/api/articles", Post("Guide Valorant", category: "Guides", tags: "valorant, riot"), Json);
+        await admin.PostAsJsonAsync("/api/articles", Post("News Zelda", category: "Actus jeux", tags: "nintendo"), Json);
+        var anon = _factory.CreateClient();
+
+        var guides = (await anon.GetFromJsonAsync<ArticlePage>("/api/articles?category=Guides", Json))!;
+        Assert.All(guides.Items, a => Assert.Equal("Guides", a.Category));
+        Assert.Contains(guides.Items, a => a.Title == "Guide Valorant");
+
+        var tagged = (await anon.GetFromJsonAsync<ArticlePage>("/api/articles?tag=nintendo", Json))!;
+        Assert.Contains(tagged.Items, a => a.Title == "News Zelda");
+        Assert.DoesNotContain(tagged.Items, a => a.Title == "Guide Valorant");
+
+        var found = (await anon.GetFromJsonAsync<ArticlePage>("/api/articles?q=zelda", Json))!;
+        Assert.Single(found.Items, a => a.Title == "News Zelda");
+    }
+
+    [Fact]
+    public async Task Only_staff_can_write_articles_and_invalid_input_is_rejected()
+    {
+        var (_, player) = await NewClientUserAsync("blogger", 0);
+        Assert.Equal(HttpStatusCode.Forbidden, (await player.PostAsJsonAsync("/api/articles", Post("Piratage"), Json)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _factory.CreateClient().PostAsJsonAsync("/api/articles", Post("Anonyme"), Json)).StatusCode);
+
+        var admin = await AdminAsync();
+        Assert.Equal(HttpStatusCode.BadRequest, (await admin.PostAsJsonAsync("/api/articles", Post("ab"), Json)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await admin.PostAsJsonAsync("/api/articles", Post("Titre valide") with { ContentMarkdown = "  " }, Json)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await admin.PostAsJsonAsync("/api/articles", Post("Titre valide") with { CoverUrl = "javascript:alert(1)" }, Json)).StatusCode);
+    }
+
     [Fact]
     public async Task Profile_endpoints_require_authentication()
     {

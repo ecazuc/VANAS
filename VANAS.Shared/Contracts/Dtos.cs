@@ -72,3 +72,16 @@ namespace VANAS.Shared.Contracts
 
     public record SaveCatalogGameRequest(string Title, VANAS.Shared.Launchers.GameLauncher Launcher, string ExternalId, bool IsEnabled);
 }
+
+namespace VANAS.Shared.Contracts
+{
+    public record ArticleSummary(int Id, string Title, string Slug, string Summary, string Category, string Tags, string? CoverUrl, bool IsPublished, DateTime? PublishedAt);
+
+    public record ArticleDetail(
+        int Id, string Title, string Slug, string Summary, string ContentMarkdown, string Category, string Tags,
+        string? CoverUrl, bool IsPublished, DateTime? PublishedAt, DateTime UpdatedAt);
+
+    public record ArticlePage(List<ArticleSummary> Items, int Page, int PageSize, int Total);
+
+    public record SaveArticleRequest(string Title, string Summary, string ContentMarkdown, string Category, string Tags, string? CoverUrl, bool IsPublished);
+}

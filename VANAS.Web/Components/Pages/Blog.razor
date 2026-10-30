@@ -1,0 +1,99 @@
+@page "/blog"
+@inject ApiClient Api
+
+<PageTitle>Actus - VANAS</PageTitle>
+
+<section class="container page">
+    <h1>Actus</h1>
+    <p class="lead">L'actualité du jeu vidéo et la vie du café.</p>
+
+    <div class="chips">
+        <a class="pill @(string.IsNullOrEmpty(Category) ? "pill-on" : "")" href="/blog">Tout</a>
+        @foreach (var c in _categories)
+        {
+            <a class="pill @(Category == c ? "pill-on" : "")" href="/blog?category=@Uri.EscapeDataString(c)">@c</a>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Tag))
+    {
+        <p class="muted">Tag : <strong>#@Tag</strong> — <a href="/blog">retirer le filtre</a></p>
+    }
+
+    @if (_error != null)
+    {
+        <p class="msg error">@_error</p>
+    }
+    else if (_page == null || _page.Items.Count == 0)
+    {
+        <p class="muted">Aucun article pour l'instant.</p>
+    }
+    else
+    {
+        <div class="features">
+            @foreach (var a in _page.Items)
+            {
+                <article class="card post-card">
+                    @if (!string.IsNullOrEmpty(a.CoverUrl))
+                    {
+                        <img class="cover" src="@a.CoverUrl" alt="" loading="lazy" />
+                    }
+                    <p class="eyebrow">@a.Category @(a.PublishedAt is DateTime d ? "· " + d.ToLocalTime().ToString("dd/MM/yyyy") : "")</p>
+                    <h3><a href="/blog/@a.Slug">@a.Title</a></h3>
+                    <p>@a.Summary</p>
+                </article>
+            }
+        </div>
+
+        @if (_totalPages > 1)
+        {
+            <nav class="pager">
+                @if (_page.Page > 1)
+                {
+                    <a class="btn small" href="@PageLink(_page.Page - 1)">&larr; Précédent</a>
+                }
+                <span class="muted">Page @_page.Page / @_totalPages</span>
+                @if (_page.Page < _totalPages)
+                {
+                    <a class="btn small" href="@PageLink(_page.Page + 1)">Suivant &rarr;</a>
+                }
+            </nav>
+        }
+    }
+</section>
+
+@code {
+    [SupplyParameterFromQuery] public int Page { get; set; } = 1;
+    [SupplyParameterFromQuery] public string? Category { get; set; }
+    [SupplyParameterFromQuery] public string? Tag { get; set; }
+
+    private ArticlePage? _page;
+    private List<string> _categories = new();
+    private string? _error;
+    private int _totalPages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var categories = await Api.GetArticleCategoriesAsync();
+        if (categories.Ok && categories.Value != null) _categories = categories.Value;
+
+        var result = await Api.GetArticlesAsync(Math.Max(1, Page), Category, Tag, null);
+        if (result.Ok && result.Value != null)
+        {
+            _page = result.Value;
+            _totalPages = (int)Math.Ceiling(_page.Total / (double)_page.PageSize);
+        }
+        else
+        {
+            _error = "Les articles sont momentanément indisponibles.";
+        }
+    }
+
+    private string PageLink(int page)
+    {
+        var parts = new List<string> { $"page={page}" };
+        if (!string.IsNullOrEmpty(Category)) parts.Add("category=" + Uri.EscapeDataString(Category));
+        if (!string.IsNullOrEmpty(Tag)) parts.Add("tag=" + Uri.EscapeDataString(Tag));
+        return "/blog?" + string.Join('&', parts);
+    }
+}
