@@ -9,18 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Assets\counter_strike.jpg" />
-    <None Remove="Assets\enshrouded1.jpg" />
-    <None Remove="Assets\enshrouded2.jpg" />
-    <None Remove="Assets\icon_steam_vr.png" />
-    <None Remove="Assets\ittakestwo.jpg" />
-    <None Remove="Assets\repo.jpg" />
-    <None Remove="Assets\RiotClient.ico" />
-    <None Remove="Assets\stumbleguys.jpg" />
-    <None Remove="Assets\Thelastofus1.jpg" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.*" />
     <PackageReference Include="Refit.HttpClientFactory" Version="10.0.1" />
   </ItemGroup>
 
@@ -29,33 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\counter_strike.jpg">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\enshrouded1.jpg">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\enshrouded2.jpg">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\icon_steam_vr.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\ittakestwo.jpg">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\repo.jpg">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\RiotClient.ico">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\stumbleguys.jpg">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\Thelastofus1.jpg">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
+    <Resource Include="Assets\**" />
+    <None Update="client.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
