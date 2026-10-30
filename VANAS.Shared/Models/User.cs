@@ -1,18 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace VANAS.Shared.Models
 {
+    public enum UserRole
+    {
+        Client = 0,
+        Staff = 1,
+        Admin = 2
+    }
+
     public class User
     {
-        public int Id { get; set; } // Primary Key
+        public int Id { get; set; }
         public string Username { get; set; } = string.Empty;
-        public string PasswordHash { get; set; } = string.Empty; // Never store plain passwords!
-        public double BalanceMinutes { get; set; } // How much time they have left
-        public bool IsAdmin { get; set; } // To distinguish between gamers and staff
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string PasswordHash { get; set; } = string.Empty;
+        public UserRole Role { get; set; } = UserRole.Client;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public Profile? Profile { get; set; }
     }
 }
