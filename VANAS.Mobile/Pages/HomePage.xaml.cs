@@ -68,6 +68,8 @@ public partial class HomePage : ContentPage
         AccountLabel.Text = $"Compte {p.Username}";
         PlayedLabel.Text = Format(p.TotalMinutesPlayed);
         SessionsLabel.Text = $"{p.SessionCount} session(s)";
+        PassLabel.Text = p.PassSummary == null ? null : "FORFAIT · " + p.PassSummary;
+        PassLabel.IsVisible = p.PassSummary != null;
     }
 
     private async Task RefreshLiveAsync()

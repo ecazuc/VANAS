@@ -189,6 +189,8 @@ namespace VANAS.Client.Views
                 statPlayed.Text = played.TotalHours >= 1 ? $"{(int)played.TotalHours} h {played.Minutes:D2}" : $"{(int)played.TotalMinutes} min";
                 statSessions.Text = p.SessionCount.ToString(CultureInfo.CurrentCulture);
                 statSince.Text = p.MemberSince.ToLocalTime().ToString("dd/MM/yyyy", CultureInfo.CurrentCulture);
+                lblPass.Text = p.PassSummary == null ? string.Empty : "FORFAIT · " + p.PassSummary;
+                lblPass.Visibility = p.PassSummary == null ? Visibility.Collapsed : Visibility.Visible;
             }
             catch
             {

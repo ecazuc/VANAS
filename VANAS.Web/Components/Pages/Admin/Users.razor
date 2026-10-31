@@ -23,6 +23,45 @@
         </div>
     </form>
 
+    @if (_sellFor != null)
+    {
+        <div class="card">
+            <h3>Vendre à « @_sellFor.Username »</h3>
+            @if (_offers.Count == 0)
+            {
+                <p class="muted">Aucune formule en vente. Un administrateur doit d'abord en créer dans « Tarifs ».</p>
+            }
+            else
+            {
+                <div class="row two">
+                    <div>
+                        <label>Formule</label>
+                        <select @bind="_sellOfferId">
+                            @foreach (var o in _offers)
+                            {
+                                <option value="@o.Id">@o.Name — @OfferText.Euros(o.PriceCents) — @OfferText.Describe(o)</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label>Moyen de paiement</label>
+                        <select @bind="_sellMethod">
+                            @foreach (var m in Enum.GetValues<PaymentMethod>())
+                            {
+                                <option value="@m">@OfferText.MethodLabel(m)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <label>Note (optionnelle)</label>
+                <input @bind="_sellNote" maxlength="200" />
+                <p class="muted">Encaissez @OfferText.Euros(SelectedOffer?.PriceCents ?? 0) avant de valider.</p>
+                <button class="btn" @onclick="SellAsync" disabled="@_selling">@(_selling ? "Enregistrement..." : "Valider la vente")</button>
+            }
+            <button class="btn small" @onclick="() => _sellFor = null">Annuler</button>
+        </div>
+    }
+
     <input class="search" placeholder="Rechercher un compte..." @bind="_search" @bind:event="oninput" />
 
     <table class="table">
@@ -56,6 +95,7 @@
                         <button class="btn small" @onclick="() => AddTimeAsync(u)">+ min</button>
                     </td>
                     <td class="actions">
+                        <button class="btn small" @onclick="() => StartSell(u)">Vendre</button>
                         @if (u.IsOnline)
                         {
                             <button class="btn small danger" @onclick="() => KickAsync(u)">Kicker</button>
@@ -83,6 +123,42 @@
     private int? _confirmDelete;
     private string? _message;
     private bool _messageIsError;
+
+    private List<OfferDto> _offers = new();
+    private UserSummary? _sellFor;
+    private int _sellOfferId;
+    private PaymentMethod _sellMethod = PaymentMethod.Cash;
+    private string _sellNote = string.Empty;
+    private bool _selling;
+
+    private OfferDto? SelectedOffer => _offers.FirstOrDefault(o => o.Id == _sellOfferId);
+
+    private async Task StartSell(UserSummary user)
+    {
+        var result = await Api.GetOffersAsync();
+        _offers = result.Value ?? new();
+        _sellFor = user;
+        _sellOfferId = _offers.FirstOrDefault()?.Id ?? 0;
+        _sellMethod = PaymentMethod.Cash;
+        _sellNote = string.Empty;
+    }
+
+    private async Task SellAsync()
+    {
+        if (_sellFor == null || SelectedOffer == null) return;
+        _selling = true;
+        var offer = SelectedOffer;
+        var result = await Api.SellAsync(new SellRequest(_sellFor.Id, offer.Id, _sellMethod, _sellNote));
+        _selling = false;
+
+        if (result.Ok)
+        {
+            Report($"Vendu : {offer.Name} à {_sellFor.Username} ({OfferText.Euros(offer.PriceCents)}, {OfferText.MethodLabel(_sellMethod).ToLowerInvariant()}).", false);
+            _sellFor = null;
+        }
+        else Report(result.Error, true);
+        await LoadAsync();
+    }
 
     private IEnumerable<UserSummary> Filtered =>
         _users.Where(u => u.Username.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));

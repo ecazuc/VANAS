@@ -27,6 +27,7 @@
                         <Label x:Name="StateLabel" FontSize="11" FontAttributes="Bold" TextColor="#7C828F" VerticalOptions="Center" />
                     </HorizontalStackLayout>
                     <Label x:Name="TimeLabel" Text="--" FontSize="40" FontAttributes="Bold" TextColor="#FCEE0A" />
+                    <Label x:Name="PassLabel" FontSize="12" FontAttributes="Bold" TextColor="#3DF2A5" IsVisible="False" />
                     <Label x:Name="LinkLabel" FontSize="12" TextColor="#7C828F" />
                 </VerticalStackLayout>
             </Border>

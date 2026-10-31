@@ -144,6 +144,8 @@
                     </Border>
                 </StackPanel>
 
+                <TextBlock x:Name="lblPass" FontSize="15" FontWeight="Bold" Foreground="{StaticResource OkBrush}" Margin="0,16,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>
+
                 <TextBlock Text="DERNIÈRES SESSIONS" Style="{StaticResource TitleText}" FontSize="18" Margin="0,32,0,10"/>
                 <TextBlock x:Name="lblNoHistory" Text="Aucune session pour l'instant." Foreground="{StaticResource MutedBrush}" Visibility="Collapsed"/>
                 <ItemsControl x:Name="listHistory">

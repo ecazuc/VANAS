@@ -54,7 +54,8 @@ namespace VANAS.Shared.Contracts
         double MinutesLeft,
         double TotalMinutesPlayed,
         int SessionCount,
-        DateTime MemberSince);
+        DateTime MemberSince,
+        string? PassSummary = null);
 
     public record UpdateProfileRequest(string DisplayName, string AvatarKey);
 
@@ -109,4 +110,31 @@ namespace VANAS.Shared.Contracts
 {
     /// <summary>What the mobile app shows live: the balance and whether the player is currently on a PC.</summary>
     public record LiveStatus(double MinutesLeft, bool InSession, string? StationName);
+}
+
+namespace VANAS.Shared.Contracts
+{
+    public record OfferDto(
+        int Id, string Name, string Description, VANAS.Shared.Models.OfferKind Kind, int Minutes, int DurationDays,
+        int DailyLimitMinutes, int PriceCents, bool IsActive, int SortOrder);
+
+    public record SaveOfferRequest(
+        string Name, string Description, VANAS.Shared.Models.OfferKind Kind, int Minutes, int DurationDays,
+        int DailyLimitMinutes, int PriceCents, bool IsActive, int SortOrder);
+
+    public record SellRequest(int UserId, int OfferId, VANAS.Shared.Models.PaymentMethod Method, string? Note);
+
+    public record SaleDto(
+        int Id, DateTime CreatedAt, string UserName, string OfferName, VANAS.Shared.Models.OfferKind Kind, int PriceCents,
+        VANAS.Shared.Models.PaymentMethod Method, string SoldBy, string? Note);
+
+    public record SellResult(SaleDto Sale, double MinutesLeft);
+
+    public record MethodTotal(VANAS.Shared.Models.PaymentMethod Method, int Count, int TotalCents);
+
+    public record SalesReport(DateTime Day, List<SaleDto> Items, int TotalCents, List<MethodTotal> ByMethod);
+
+    /// <summary>A pass as shown to the player: MinutesLeft is the quota left, or the daily allowance left for an unlimited pass (null when uncapped).</summary>
+    public record SubscriptionInfo(
+        int Id, string Name, VANAS.Shared.Models.OfferKind Kind, DateTime StartsAt, DateTime EndsAt, bool IsActive, double? MinutesLeft);
 }

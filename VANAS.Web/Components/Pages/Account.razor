@@ -28,6 +28,10 @@
             <div class="card">
                 <p class="eyebrow">Temps restant</p>
                 <h3>@FormatMinutes(_profile.MinutesLeft)</h3>
+                @if (_profile.PassSummary != null)
+                {
+                    <p><span class="chip chip-on">FORFAIT</span> @_profile.PassSummary</p>
+                }
                 <p class="muted">Le temps se recharge au comptoir.</p>
             </div>
             <div class="card">

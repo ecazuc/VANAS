@@ -1,0 +1,104 @@
+@page "/admin/caisse"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+
+<PageTitle>Caisse - VANAS staff</PageTitle>
+
+<AdminShell Title="Caisse">
+    <div class="card inline-form">
+        <div class="row">
+            <button class="btn small" @onclick="() => ShiftAsync(-1)">&larr; Veille</button>
+            <input type="date" value="@_day.ToString("yyyy-MM-dd")" @onchange="OnDateChanged" />
+            <button class="btn small" @onclick="() => ShiftAsync(1)">Lendemain &rarr;</button>
+            <button class="btn small" @onclick="TodayAsync">Aujourd'hui</button>
+        </div>
+    </div>
+
+    @if (_message != null)
+    {
+        <p class="msg error">@_message</p>
+    }
+
+    @if (_report != null)
+    {
+        <div class="features">
+            <div class="card">
+                <p class="eyebrow">Total du @_report.Day.ToString("dd/MM/yyyy")</p>
+                <h3>@OfferText.Euros(_report.TotalCents)</h3>
+                <p class="muted">@_report.Items.Count vente(s)</p>
+            </div>
+            @foreach (var m in _report.ByMethod)
+            {
+                <div class="card">
+                    <p class="eyebrow">@OfferText.MethodLabel(m.Method)</p>
+                    <h3>@OfferText.Euros(m.TotalCents)</h3>
+                    <p class="muted">@m.Count vente(s)</p>
+                </div>
+            }
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr><th>Heure</th><th>Joueur</th><th>Formule</th><th>Prix</th><th>Paiement</th><th>Encaissé par</th><th>Note</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var s in _report.Items)
+                {
+                    <tr>
+                        <td class="muted">@s.CreatedAt.ToLocalTime().ToString("HH:mm")</td>
+                        <td>@s.UserName</td>
+                        <td>@s.OfferName</td>
+                        <td>@OfferText.Euros(s.PriceCents)</td>
+                        <td>@OfferText.MethodLabel(s.Method)</td>
+                        <td class="muted">@s.SoldBy</td>
+                        <td class="muted">@s.Note</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (_report.Items.Count == 0)
+        {
+            <p class="muted">Aucune vente ce jour-là.</p>
+        }
+    }
+</AdminShell>
+
+@code {
+    private DateTime _day = DateTime.Today;
+    private SalesReport? _report;
+    private string? _message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Auth.Token == null) return;
+        var result = await Api.GetSalesReportAsync(_day);
+        if (result.Ok) { _report = result.Value; _message = null; }
+        else _message = result.Error;
+    }
+
+    private async Task ShiftAsync(int days)
+    {
+        _day = _day.AddDays(days);
+        await LoadAsync();
+    }
+
+    private async Task TodayAsync()
+    {
+        _day = DateTime.Today;
+        await LoadAsync();
+    }
+
+    private async Task OnDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d)) _day = d.Date;
+        await LoadAsync();
+    }
+}

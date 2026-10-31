@@ -1,0 +1,184 @@
+@page "/admin/tarifs"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+
+<PageTitle>Tarifs - VANAS staff</PageTitle>
+
+<AdminShell Title="Tarifs et forfaits">
+    @if (_message != null)
+    {
+        <p class="msg @(_messageIsError ? "error" : "ok")">@_message</p>
+    }
+
+    @if (Auth.IsAdmin)
+    {
+        <form class="card" @onsubmit="SaveAsync">
+            <h3>@(_editingId == null ? "Nouvelle formule" : "Modifier la formule")</h3>
+
+            <div class="row two">
+                <div>
+                    <label>Nom affiché</label>
+                    <input @bind="_name" maxlength="60" placeholder="ex. 5 heures" />
+                </div>
+                <div>
+                    <label>Type</label>
+                    <select @bind="_kind">
+                        <option value="@OfferKind.HourPack">Heures de jeu (sans date limite)</option>
+                        <option value="@OfferKind.UnlimitedPass">Forfait illimité (durée limitée)</option>
+                        <option value="@OfferKind.QuotaPass">Forfait d'heures (quota sur une durée)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row two">
+                @if (_kind != OfferKind.UnlimitedPass)
+                {
+                    <div>
+                        <label>@(_kind == OfferKind.HourPack ? "Heures créditées (en minutes)" : "Quota (en minutes)")</label>
+                        <input type="number" min="1" @bind="_minutes" />
+                    </div>
+                }
+                @if (_kind != OfferKind.HourPack)
+                {
+                    <div>
+                        <label>Validité (jours)</label>
+                        <input type="number" min="1" max="366" @bind="_days" />
+                    </div>
+                }
+                @if (_kind == OfferKind.UnlimitedPass)
+                {
+                    <div>
+                        <label>Limite par jour (minutes, 0 = aucune)</label>
+                        <input type="number" min="0" max="1440" @bind="_daily" />
+                    </div>
+                }
+            </div>
+
+            <div class="row two">
+                <div>
+                    <label>Prix en euros</label>
+                    <input type="number" min="0" step="0.5" @bind="_price" />
+                </div>
+                <div>
+                    <label>Ordre d'affichage</label>
+                    <input type="number" @bind="_order" />
+                </div>
+            </div>
+
+            <label>Description (optionnelle)</label>
+            <input @bind="_description" maxlength="300" />
+
+            <label class="check"><input type="checkbox" @bind="_active" /> En vente (visible sur le site et proposée au comptoir)</label>
+
+            <p class="muted">Aperçu client : <strong>@OfferText.Describe(_kind, _minutes, _days, _daily)</strong> — @OfferText.Euros((int)Math.Round(_price * 100))</p>
+
+            <button class="btn" type="submit" disabled="@_busy">@(_editingId == null ? "Ajouter" : "Enregistrer")</button>
+            @if (_editingId != null)
+            {
+                <button class="btn small" type="button" @onclick="ResetForm">Annuler</button>
+            }
+        </form>
+    }
+    else
+    {
+        <p class="muted">Seul un administrateur peut modifier les tarifs.</p>
+    }
+
+    <table class="table">
+        <thead>
+            <tr><th>Formule</th><th>Contenu</th><th>Prix</th><th>Statut</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var o in _offers)
+            {
+                <tr>
+                    <td><strong>@o.Name</strong><br /><span class="muted">@OfferText.KindLabel(o.Kind)</span></td>
+                    <td>@OfferText.Describe(o)</td>
+                    <td>@OfferText.Euros(o.PriceCents)</td>
+                    <td><span class="chip @(o.IsActive ? "chip-on" : "chip-off")">@(o.IsActive ? "EN VENTE" : "RETIRÉE")</span></td>
+                    <td class="actions">
+                        @if (Auth.IsAdmin)
+                        {
+                            <button class="btn small" @onclick="() => Edit(o)">Modifier</button>
+                            <button class="btn small danger" @onclick="() => DeleteAsync(o)">@(_confirmDelete == o.Id ? "Confirmer ?" : "Supprimer")</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (_offers.Count == 0)
+    {
+        <p class="muted">Aucune formule. Un administrateur peut en créer.</p>
+    }
+</AdminShell>
+
+@code {
+    private List<OfferDto> _offers = new();
+    private int? _editingId, _confirmDelete;
+    private string _name = string.Empty, _description = string.Empty;
+    private OfferKind _kind = OfferKind.HourPack;
+    private int _minutes = 60, _days = 30, _daily, _order;
+    private decimal _price = 3;
+    private bool _active = true, _busy, _messageIsError;
+    private string? _message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Auth.Token == null) return;
+        var result = await Api.GetManagedOffersAsync();
+        if (result.Ok && result.Value != null) _offers = result.Value;
+        else Report(result.Error, true);
+    }
+
+    private void Report(string? text, bool isError)
+    {
+        _message = text;
+        _messageIsError = isError;
+    }
+
+    private void Edit(OfferDto o)
+    {
+        _editingId = o.Id;
+        (_name, _description, _kind, _minutes, _days, _daily, _price, _active, _order) =
+            (o.Name, o.Description, o.Kind, o.Minutes, o.DurationDays, o.DailyLimitMinutes, o.PriceCents / 100m, o.IsActive, o.SortOrder);
+        if (_kind == OfferKind.HourPack) _days = 30;
+        if (_kind == OfferKind.UnlimitedPass) _minutes = 60;
+    }
+
+    private void ResetForm()
+    {
+        _editingId = null;
+        (_name, _description, _kind, _minutes, _days, _daily, _price, _active, _order) =
+            (string.Empty, string.Empty, OfferKind.HourPack, 60, 30, 0, 3m, true, 0);
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        var request = new SaveOfferRequest(_name, _description, _kind, _minutes, _days, _daily, (int)Math.Round(_price * 100), _active, _order);
+        var result = await Api.SaveOfferAsync(_editingId, request);
+        _busy = false;
+
+        Report(result.Ok ? $"« {_name} » enregistrée." : result.Error, !result.Ok);
+        if (result.Ok) ResetForm();
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(OfferDto o)
+    {
+        if (_confirmDelete != o.Id) { _confirmDelete = o.Id; return; }
+        _confirmDelete = null;
+        var result = await Api.DeleteOfferAsync(o.Id);
+        Report(result.Ok ? $"« {o.Name} » supprimée (les ventes passées sont conservées)." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+}

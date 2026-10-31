@@ -99,5 +99,17 @@ Le serveur doit tourner. Version PC : voir `VANAS.Mobile/README.md`. Sur télép
 - [ ] Scanner (Android, caméra) : autoriser la caméra, scanner le QR code d'un autre téléphone : « ENTRÉE VALIDÉE » avec le nom du joueur ; un second scan : « déjà utilisé ». Saisie manuelle du code : même résultat.
 - [ ] La notification quand l'application est fermée n'existe pas encore (M-5).
 
+## I. Tarifs, forfaits et caisse
+Exemples de formules déjà créés dans la base de développement (prix de démonstration, à modifier dans Tarifs).
+- [ ] Console staff > Tarifs (compte `admin`) : créer une formule de chaque type ; l'aperçu client change selon le type ; modifier un prix ; retirer une formule de la vente (elle disparaît de `/cafe` et de la liste de vente).
+- [ ] Un compte Staff voit les tarifs mais ne peut pas les modifier.
+- [ ] Site > Le café : la grille tarifaire s'affiche, groupée par type, avec les prix en euros.
+- [ ] Console staff > Comptes > Vendre : choisir une formule et un moyen de paiement, valider : des heures s'ajoutent au compte (pack), ou un forfait apparaît (Mon compte sur le site, accueil du mobile, onglet Profil du client PC).
+- [ ] Console staff > Caisse : la vente apparaît avec l'heure, le joueur, le prix, le moyen de paiement et le staff ; les totaux par moyen sont justes ; changer de jour.
+- [ ] Forfait illimité (avec plafond par jour) : connectez-vous sur un PC, jouez quelques minutes : le solde en heures ne baisse pas, le forfait oui.
+- [ ] Forfait d'heures : le temps restant baisse et, une fois le quota épuisé, le joueur est déconnecté (s'il n'a pas d'heures achetées).
+- [ ] Deux forfaits du même type vendus au même joueur : le second commence à la fin du premier.
+- [ ] Pas encore possible : annuler ou rembourser une vente (à corriger à la main avec « + min » avec un nombre négatif et une note).
+
 ## Ce qui n'est PAS encore fait
 QR code et application mobile (M-1 à M-5), mot de passe oublié et suppression de compte (W-5 / RGPD), messagerie (M-4), application mobile (M-1 à M-5), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, tarifs et forfaits, paiement.

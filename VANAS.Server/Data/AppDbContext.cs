@@ -16,6 +16,10 @@ namespace VANAS.Server.Data
         public DbSet<CatalogGame> Games => Set<CatalogGame>();
         public DbSet<Article> Articles => Set<Article>();
         public DbSet<GameEvent> Events => Set<GameEvent>();
+        public DbSet<Offer> Offers => Set<Offer>();
+        public DbSet<Sale> Sales => Set<Sale>();
+        public DbSet<Subscription> Subscriptions => Set<Subscription>();
+        public DbSet<PassUsage> PassUsage => Set<PassUsage>();
         public DbSet<EventRegistration> EventRegistrations => Set<EventRegistration>();
 
         protected override void OnModelCreating(ModelBuilder b)
@@ -29,6 +33,9 @@ namespace VANAS.Server.Data
             b.Entity<Article>().HasIndex(a => a.Slug).IsUnique();
             b.Entity<Article>().HasIndex(a => new { a.IsPublished, a.PublishedAt });
             b.Entity<GameEvent>().HasIndex(e => e.StartsAt);
+            b.Entity<Sale>().HasIndex(s => s.CreatedAt);
+            b.Entity<Subscription>().HasIndex(s => new { s.UserId, s.EndsAt });
+            b.Entity<PassUsage>().HasIndex(u => new { u.SubscriptionId, u.At });
             b.Entity<EventRegistration>().HasIndex(r => r.TicketCode).IsUnique();
             b.Entity<EventRegistration>().HasIndex(r => new { r.EventId, r.UserId }).IsUnique();
             b.Entity<EventRegistration>().HasOne<GameEvent>().WithMany().HasForeignKey(r => r.EventId).OnDelete(DeleteBehavior.Cascade);

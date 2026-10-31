@@ -1,4 +1,5 @@
 @page "/cafe"
+@inject ApiClient Api
 
 <PageTitle>Le café - VANAS</PageTitle>
 
@@ -6,12 +7,35 @@
     <h1>Le café</h1>
     <p class="lead">Toutes les informations pratiques. Les rubriques marquées « à définir » seront complétées avant l'ouverture.</p>
 
+    <h2>Tarifs</h2>
+    @if (_offers.Count == 0)
+    {
+        <p class="muted">Grille tarifaire : à définir.</p>
+    }
+    else
+    {
+        @foreach (var group in _offers.GroupBy(o => o.Kind).OrderBy(g => g.Key))
+        {
+            <h3>@OfferText.KindLabel(group.Key)</h3>
+            <div class="features">
+                @foreach (var o in group)
+                {
+                    <article class="card">
+                        <p class="eyebrow">@o.Name</p>
+                        <h3>@OfferText.Euros(o.PriceCents)</h3>
+                        <p>@OfferText.Describe(o)</p>
+                        @if (!string.IsNullOrWhiteSpace(o.Description))
+                        {
+                            <p class="muted">@o.Description</p>
+                        }
+                    </article>
+                }
+            </div>
+        }
+        <p class="muted">Paiement au comptoir. Le temps acheté est crédité sur votre compte VANAS.</p>
+    }
+
     <div class="features">
-        <article class="card">
-            <h3>Tarifs</h3>
-            <p>Paiement à l'heure ou forfait mensuel.</p>
-            <p class="muted">Grille tarifaire : à définir.</p>
-        </article>
         <article class="card">
             <h3>Horaires</h3>
             <p class="muted">À définir.</p>
@@ -22,3 +46,13 @@
         </article>
     </div>
 </section>
+
+@code {
+    private List<OfferDto> _offers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Api.GetOffersAsync();
+        if (result.Ok && result.Value != null) _offers = result.Value;
+    }
+}

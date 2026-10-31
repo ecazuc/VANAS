@@ -122,6 +122,28 @@ namespace VANAS.Web.Services
         public Task<ApiResult<CheckInResult>> CheckInAsync(string ticketCode) =>
             SendAsync<CheckInResult>(HttpMethod.Post, "api/events/check-in", new CheckInRequest(ticketCode));
 
+        // ----- Offers and sales -----
+
+        public Task<ApiResult<List<OfferDto>>> GetOffersAsync() =>
+            SendAsync<List<OfferDto>>(HttpMethod.Get, "api/offers", authenticated: false);
+
+        public Task<ApiResult<List<OfferDto>>> GetManagedOffersAsync() =>
+            SendAsync<List<OfferDto>>(HttpMethod.Get, "api/offers/manage");
+
+        public Task<ApiResult<OfferDto>> SaveOfferAsync(int? id, SaveOfferRequest request) =>
+            id is int existing
+                ? SendAsync<OfferDto>(HttpMethod.Put, $"api/offers/{existing}", request)
+                : SendAsync<OfferDto>(HttpMethod.Post, "api/offers", request);
+
+        public Task<ApiResult> DeleteOfferAsync(int id) =>
+            SendAsync(HttpMethod.Delete, $"api/offers/{id}");
+
+        public Task<ApiResult<SellResult>> SellAsync(SellRequest request) =>
+            SendAsync<SellResult>(HttpMethod.Post, "api/sales", request);
+
+        public Task<ApiResult<SalesReport>> GetSalesReportAsync(DateTime day) =>
+            SendAsync<SalesReport>(HttpMethod.Get, $"api/sales?day={day:yyyy-MM-dd}");
+
         // ----- Customer account -----
 
         public Task<ApiResult<ProfileInfo>> GetMyProfileAsync() =>

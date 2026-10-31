@@ -65,7 +65,7 @@ namespace VANAS.Server.Controllers
             var session = await FindOpenSession(id);
             if (session == null) return NotFound("Session not found or already ended.");
 
-            Bill(session);
+            await _balance.BillAsync(session);
             await _db.SaveChangesAsync();
             var left = await _balance.GetMinutesAsync(UserId);
 
@@ -91,7 +91,7 @@ namespace VANAS.Server.Controllers
             var session = await FindOpenSession(id);
             if (session == null) return NotFound("Session not found or already ended.");
 
-            Bill(session);
+            await _balance.BillAsync(session);
             Close(session, SessionEndReason.UserLogout);
             await _db.SaveChangesAsync();
             return Ok(new { MinutesLeft = await _balance.GetMinutesAsync(UserId) });
@@ -99,15 +99,6 @@ namespace VANAS.Server.Controllers
 
         private Task<GameSession?> FindOpenSession(int id) =>
             _db.Sessions.FirstOrDefaultAsync(s => s.Id == id && s.UserId == UserId && s.EndedAt == null);
-
-        private static void Bill(GameSession session)
-        {
-            var now = DateTime.UtcNow;
-            var gap = now - session.LastHeartbeatAt;
-            if (gap > SessionRules.MaxBilledGap) gap = SessionRules.MaxBilledGap;
-            if (gap > TimeSpan.Zero) session.MinutesConsumed += gap.TotalMinutes;
-            session.LastHeartbeatAt = now;
-        }
 
         private static void Close(GameSession session, SessionEndReason reason)
         {

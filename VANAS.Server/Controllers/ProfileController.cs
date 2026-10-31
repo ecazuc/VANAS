@@ -95,8 +95,18 @@ namespace VANAS.Server.Controllers
         private async Task<ProfileInfo> BuildAsync(User user)
         {
             var sessions = _db.Sessions.Where(s => s.UserId == user.Id);
+            // Time played counts both what was taken from the hours bought and what a pass covered.
             var total = await sessions.SumAsync(s => (double?)s.MinutesConsumed) ?? 0;
+            total += await (from u in _db.PassUsage
+                            join s in _db.Subscriptions on u.SubscriptionId equals s.Id
+                            where s.UserId == user.Id
+                            select (double?)u.Minutes).SumAsync() ?? 0;
             var count = await sessions.CountAsync();
+
+            string? passSummary = null;
+            var active = await _balance.GetActivePassesAsync(user.Id, DateTime.UtcNow);
+            if (active.Count > 0) passSummary = Describe(active[0]);
+
             return new ProfileInfo(
                 user.Username,
                 user.Profile?.DisplayName ?? user.Username,
@@ -104,7 +114,40 @@ namespace VANAS.Server.Controllers
                 await _balance.GetMinutesAsync(user.Id),
                 total,
                 count,
-                user.CreatedAt);
+                user.CreatedAt,
+                passSummary);
+        }
+
+        private static string Describe(ActivePass pass)
+        {
+            var until = pass.Subscription.EndsAt.ToLocalTime().ToString("dd/MM/yyyy");
+            return pass.Subscription.Kind == OfferKind.QuotaPass
+                ? $"{pass.Subscription.OfferName} : {FormatMinutes(pass.AllowedMinutes)} restantes, jusqu'au {until}"
+                : $"{pass.Subscription.OfferName} : illimité jusqu'au {until}";
+        }
+
+        private static string FormatMinutes(double minutes)
+        {
+            var total = (int)Math.Round(minutes);
+            return total >= 60 ? $"{total / 60} h {total % 60:00}" : $"{total} min";
+        }
+
+        /// <summary>The player's active and upcoming passes.</summary>
+        [HttpGet("me/subscriptions")]
+        public async Task<IActionResult> GetMySubscriptions()
+        {
+            var now = DateTime.UtcNow;
+            var current = (await _balance.GetActivePassesAsync(UserId, now)).ToDictionary(p => p.Subscription.Id);
+            var subs = await _db.Subscriptions.Where(s => s.UserId == UserId && s.EndsAt > now).OrderBy(s => s.StartsAt).ToListAsync();
+
+            return Ok(subs.Select(s =>
+            {
+                var live = current.GetValueOrDefault(s.Id);
+                double? left = live == null ? null
+                    : s.Kind == OfferKind.UnlimitedPass && s.DailyLimitMinutes == 0 ? null
+                    : live.AllowedMinutes;
+                return new SubscriptionInfo(s.Id, s.OfferName, s.Kind, s.StartsAt, s.EndsAt, live != null, left);
+            }));
         }
     }
 }
