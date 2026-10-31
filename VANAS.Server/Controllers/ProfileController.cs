@@ -20,10 +20,13 @@ namespace VANAS.Server.Controllers
         private readonly AppDbContext _db;
         private readonly BalanceService _balance;
 
-        public ProfileController(AppDbContext db, BalanceService balance)
+        private readonly AccountService _accounts;
+
+        public ProfileController(AppDbContext db, BalanceService balance, AccountService accounts)
         {
             _db = db;
             _balance = balance;
+            _accounts = accounts;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -57,6 +60,28 @@ namespace VANAS.Server.Controllers
             profile.AvatarKey = request.AvatarKey;
             await _db.SaveChangesAsync();
             return Ok(await BuildAsync(user));
+        }
+
+        /// <summary>A copy of everything stored about the player (right of access).</summary>
+        [HttpGet("me/export")]
+        public async Task<IActionResult> Export()
+        {
+            var data = await _accounts.ExportAsync(UserId);
+            return data == null ? NotFound() : Ok(data);
+        }
+
+        /// <summary>The player deletes their own account (right to erasure). Staff accounts are removed by an administrator.</summary>
+        [HttpDelete("me")]
+        public async Task<IActionResult> DeleteMine([FromBody] DeleteAccountRequest request)
+        {
+            var user = await _db.Users.FindAsync(UserId);
+            if (user == null) return NotFound();
+            if (user.Role != UserRole.Client) return StatusCode(StatusCodes.Status403Forbidden, "Les comptes du staff sont supprimés par un administrateur.");
+            if (string.IsNullOrEmpty(request.Password) || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                return BadRequest("Mot de passe incorrect.");
+
+            await _accounts.DeleteAsync(user.Id);
+            return Ok();
         }
 
         [HttpGet("me/live")]

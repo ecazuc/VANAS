@@ -181,6 +181,22 @@ public class ApiService
     public Task<ApiResult> ReportAsync(int messageId, string reason) =>
         SendAsync(HttpMethod.Post, $"api/chat/messages/{messageId}/report", new ReportRequest(reason));
 
+    /// <summary>The player's data as the JSON text to share or save.</summary>
+    public async Task<ApiResult<string>> ExportMyDataAsync()
+    {
+        var (response, error) = await RawAsync(HttpMethod.Get, "api/profile/me/export", null, authenticated: true);
+        if (error != null || response == null) return new ApiResult<string>(null, error ?? "Réponse vide.");
+        return new ApiResult<string>(await response.Content.ReadAsStringAsync(), null);
+    }
+
+    public async Task<ApiResult> DeleteMyAccountAsync(string password)
+    {
+        var (_, error) = await RawAsync(HttpMethod.Delete, "api/profile/me", new DeleteAccountRequest(password), authenticated: true);
+        if (error != null) return new ApiResult(error);
+        SignOut();
+        return new ApiResult((string?)null);
+    }
+
     public void SignOut()
     {
         _token = null;

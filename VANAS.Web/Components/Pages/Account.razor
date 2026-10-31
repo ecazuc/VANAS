@@ -3,15 +3,20 @@
 @inject ApiClient Api
 @inject StaffAuthState Auth
 @inject NavigationManager Navigation
+@inject IJSRuntime Js
 
 <PageTitle>Mon compte - VANAS</PageTitle>
 
 <section class="container page">
     <h1>Mon compte</h1>
 
-    @if (Accord == "1")
+    @if (_consentPending)
     {
-        <p class="msg ok">Compte créé. Comme vous avez moins de 15 ans, un parent ou responsable légal doit passer au comptoir du café pour valider votre inscription avant que vous puissiez jouer ou utiliser la messagerie.</p>
+        <p class="msg error">Accord parental requis : un parent ou responsable légal doit passer au comptoir du café pour valider votre inscription avant que vous puissiez jouer, utiliser la messagerie ou vous inscrire à un événement.</p>
+    }
+    else if (Accord == "1")
+    {
+        <p class="msg ok">Compte créé.</p>
     }
 
     @if (!_loaded)
@@ -91,6 +96,30 @@
             </table>
         }
 
+        <h2>Mes données</h2>
+        <p class="muted">Vous pouvez télécharger une copie des informations enregistrées sur votre compte, ou supprimer votre compte. Voir aussi la politique de données du café.</p>
+        <p><button class="btn" @onclick="DownloadAsync" disabled="@_busy">Télécharger mes données</button></p>
+
+        @if (!_confirmDelete)
+        {
+            <p><button class="btn small danger" @onclick="() => _confirmDelete = true">Supprimer mon compte</button></p>
+        }
+        else
+        {
+            <div class="card">
+                <p><strong>Cette action est définitive.</strong> Votre compte, vos heures restantes, votre historique, vos billets et vos messages seront supprimés. Seuls vos achats restent dans la comptabilité du café, sans votre nom.</p>
+                <label>Entrez votre mot de passe pour confirmer</label>
+                <input type="password" @bind="_deletePassword" autocomplete="current-password" />
+                <button class="btn danger" @onclick="DeleteAsync" disabled="@_busy">Supprimer définitivement</button>
+                <button class="btn small" @onclick="() => _confirmDelete = false">Annuler</button>
+            </div>
+        }
+
+        @if (_dataMessage != null)
+        {
+            <p class="msg @(_dataMessageIsError ? "error" : "ok")">@_dataMessage</p>
+        }
+
         <p><button class="btn" @onclick="SignOutAsync">Se déconnecter</button></p>
     }
 </section>
@@ -126,7 +155,44 @@
         _profile = profile.Value;
         _tickets = (await Api.GetMyTicketsAsync()).Value ?? new();
         _sessions = (await Api.GetMySessionsAsync()).Value ?? new();
+        _consentPending = (await Api.GetMeAsync()).Value?.ConsentPending == true;
         _loaded = true;
+    }
+
+    private bool _consentPending, _busy, _confirmDelete, _dataMessageIsError;
+    private string _deletePassword = string.Empty;
+    private string? _dataMessage;
+
+    private async Task DownloadAsync()
+    {
+        _busy = true;
+        var result = await Api.ExportMyDataAsync();
+        _busy = false;
+        _dataMessageIsError = !result.Ok;
+        if (!result.Ok || result.Value == null)
+        {
+            _dataMessage = result.Error;
+            return;
+        }
+
+        await Js.InvokeVoidAsync("vanasDownload", $"vanas-mes-donnees-{DateTime.Now:yyyy-MM-dd}.json", result.Value);
+        _dataMessage = "Votre fichier a été téléchargé.";
+    }
+
+    private async Task DeleteAsync()
+    {
+        _busy = true;
+        var result = await Api.DeleteMyAccountAsync(_deletePassword);
+        _busy = false;
+        if (!result.Ok)
+        {
+            _dataMessageIsError = true;
+            _dataMessage = result.Error;
+            return;
+        }
+
+        await Auth.SignOutAsync();
+        Navigation.NavigateTo("/");
     }
 
     private async Task SignOutAsync()

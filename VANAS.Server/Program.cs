@@ -14,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<BalanceService>();
 builder.Services.AddSingleton<AgeService>();
+builder.Services.AddScoped<AccountService>();
 builder.Services.AddHostedService<ChatRetentionService>();
 builder.Services.AddSingleton<TokenService>();
 

@@ -176,3 +176,9 @@ namespace VANAS.Shared.Contracts
 
     public record SanctionDto(int UserId, string DisplayName, DateTime? MutedUntil, bool IsBanned, string? Reason);
 }
+
+namespace VANAS.Shared.Contracts
+{
+    /// <summary>The player proves it is them (password) before deleting their own account.</summary>
+    public record DeleteAccountRequest(string Password);
+}

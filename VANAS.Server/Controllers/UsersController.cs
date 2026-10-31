@@ -20,13 +20,15 @@ namespace VANAS.Server.Controllers
         private readonly BalanceService _balance;
         private readonly IHubContext<SessionHub> _hub;
         private readonly AgeService _age;
+        private readonly AccountService _accounts;
 
-        public UsersController(AppDbContext db, BalanceService balance, IHubContext<SessionHub> hub, AgeService age)
+        public UsersController(AppDbContext db, BalanceService balance, IHubContext<SessionHub> hub, AgeService age, AccountService accounts)
         {
             _db = db;
             _balance = balance;
             _hub = hub;
             _age = age;
+            _accounts = accounts;
         }
 
         /// <summary>Tells the user's PC to sync right away (kick, added time) instead of waiting for the next heartbeat.</summary>
@@ -124,19 +126,8 @@ namespace VANAS.Server.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             if (id == CurrentUserId) return BadRequest("You cannot delete yourself.");
-            var user = await _db.Users.Include(u => u.Profile).FirstOrDefaultAsync(u => u.Id == id);
-            if (user == null) return NotFound("User not found.");
-            // The player's chat data goes with the account (messages sent or received, blocks, reports, sanctions).
-            var messageIds = await _db.ChatMessages.Where(m => m.SenderId == id || m.RecipientId == id).Select(m => m.Id).ToListAsync();
-            _db.MessageReports.RemoveRange(_db.MessageReports.Where(r => r.ReporterId == id || messageIds.Contains(r.MessageId)));
-            _db.ChatMessages.RemoveRange(_db.ChatMessages.Where(m => messageIds.Contains(m.Id)));
-            _db.UserBlocks.RemoveRange(_db.UserBlocks.Where(b => b.BlockerId == id || b.BlockedId == id));
-            _db.PlayerGames.RemoveRange(_db.PlayerGames.Where(p => p.UserId == id));
-            _db.ChatSanctions.RemoveRange(_db.ChatSanctions.Where(s => s.UserId == id));
-
-            _db.Users.Remove(user);
-            await _db.SaveChangesAsync();
-            return Ok();
+            // Same erasure as when the player deletes their own account (chat, sessions, time credits, passes, tickets).
+            return await _accounts.DeleteAsync(id) ? Ok() : NotFound("User not found.");
         }
     }
 }

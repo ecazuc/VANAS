@@ -50,6 +50,10 @@
 
             <Label x:Name="ErrorLabel" TextColor="#FF4D5E" IsVisible="False" />
 
+            <Label Text="MES DONNÉES" FontSize="11" TextColor="#7C828F" Margin="0,12,0,0" />
+            <Button Text="TÉLÉCHARGER MES DONNÉES" BackgroundColor="#2E323B" TextColor="#C8CCD4" CornerRadius="0" Clicked="OnExport" />
+            <Button Text="SUPPRIMER MON COMPTE" BackgroundColor="Transparent" TextColor="#7C828F" FontSize="12" Clicked="OnDeleteAccount" />
+
             <Button Text="SE DÉCONNECTER" BackgroundColor="Transparent" TextColor="#FF4D5E" BorderColor="#FF4D5E" BorderWidth="1" CornerRadius="0" Clicked="OnSignOut" />
         </VerticalStackLayout>
     </ScrollView>

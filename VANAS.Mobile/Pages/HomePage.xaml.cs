@@ -210,6 +210,44 @@ public partial class HomePage : ContentPage
 
     // ----- UI helpers -----
 
+    /// <summary>Writes the player's data to a file and opens the system share sheet (save, mail, drive...).</summary>
+    private async void OnExport(object? sender, EventArgs e)
+    {
+        var result = await _api.ExportMyDataAsync();
+        if (!result.Ok || result.Value == null)
+        {
+            ShowError(result.Error);
+            return;
+        }
+
+        var path = Path.Combine(FileSystem.CacheDirectory, $"vanas-mes-donnees-{DateTime.Now:yyyy-MM-dd}.json");
+        await File.WriteAllTextAsync(path, result.Value);
+        await Share.Default.RequestAsync(new ShareFileRequest("Mes données VANAS", new ShareFile(path)));
+    }
+
+    private async void OnDeleteAccount(object? sender, EventArgs e)
+    {
+        var sure = await DisplayAlert("Supprimer mon compte",
+            "Cette action est définitive : votre compte, vos heures restantes, votre historique, vos billets et vos messages seront supprimés. Seuls vos achats restent dans la comptabilité du café, sans votre nom.",
+            "Continuer", "Annuler");
+        if (!sure) return;
+
+        var password = await DisplayPromptAsync("Confirmer", "Entrez votre mot de passe", "Supprimer", "Annuler", "mot de passe", -1, Keyboard.Default);
+        if (string.IsNullOrEmpty(password)) return;
+
+        var result = await _api.DeleteMyAccountAsync(password);
+        if (!result.Ok)
+        {
+            ShowError(result.Error);
+            return;
+        }
+
+        _timer?.Stop();
+        await DisconnectHubAsync();
+        await DisplayAlert("Compte supprimé", "Votre compte a été supprimé.", "OK");
+        await Shell.Current.GoToAsync("//login");
+    }
+
     private async void OnSignOut(object? sender, EventArgs e)
     {
         _timer?.Stop();

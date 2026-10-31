@@ -169,6 +169,20 @@ namespace VANAS.Web.Services
 
         // ----- Customer account -----
 
+        public Task<ApiResult<LoginResponse>> GetMeAsync() =>
+            SendAsync<LoginResponse>(HttpMethod.Get, "api/auth/me");
+
+        /// <summary>The player's data as the JSON text to save in a file.</summary>
+        public async Task<ApiResult<string>> ExportMyDataAsync()
+        {
+            var (response, error) = await RawAsync(HttpMethod.Get, "api/profile/me/export", null, authenticated: true);
+            if (error != null || response == null) return new ApiResult<string>(null, error ?? "Réponse vide.");
+            return new ApiResult<string>(await response.Content.ReadAsStringAsync(), null);
+        }
+
+        public Task<ApiResult> DeleteMyAccountAsync(string password) =>
+            SendAsync(HttpMethod.Delete, "api/profile/me", new DeleteAccountRequest(password));
+
         public Task<ApiResult<ProfileInfo>> GetMyProfileAsync() =>
             SendAsync<ProfileInfo>(HttpMethod.Get, "api/profile/me");
 
