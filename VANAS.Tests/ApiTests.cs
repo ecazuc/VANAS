@@ -58,7 +58,7 @@ public class ApiTests : IClassFixture<VanasFactory>
     private async Task<(int id, HttpClient client)> NewClientUserAsync(string name, double minutes)
     {
         var anon = _factory.CreateClient();
-        (await anon.PostAsJsonAsync("/api/auth/register", new RegisterRequest(name, "Password-123"), Json)).EnsureSuccessStatusCode();
+        (await anon.PostAsJsonAsync("/api/auth/register", new RegisterRequest(name, "Password-123", new DateOnly(1990, 1, 1)), Json)).EnsureSuccessStatusCode();
 
         var admin = await AdminAsync();
         var users = (await admin.GetFromJsonAsync<List<UserSummary>>("/api/users", Json))!;

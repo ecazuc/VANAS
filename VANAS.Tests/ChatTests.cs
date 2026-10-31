@@ -37,7 +37,7 @@ public class ChatTests : IClassFixture<VanasFactory>
 
     private async Task<Player> NewPlayerAsync(string name, bool acceptRules = true)
     {
-        (await _factory.CreateClient().PostAsJsonAsync("/api/auth/register", new RegisterRequest(name, "Password-123"), Json)).EnsureSuccessStatusCode();
+        (await _factory.CreateClient().PostAsJsonAsync("/api/auth/register", new RegisterRequest(name, "Password-123", new DateOnly(1990, 1, 1)), Json)).EnsureSuccessStatusCode();
         var (_, admin) = await AdminAsync();
         var id = (await admin.GetFromJsonAsync<List<UserSummary>>("/api/users", Json))!.Single(u => u.Username == name).Id;
         var (token, client) = await LoginAsync(name, "Password-123");

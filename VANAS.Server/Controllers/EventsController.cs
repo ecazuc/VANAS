@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using VANAS.Server.Data;
+using VANAS.Server.Services;
 using VANAS.Shared.Contracts;
 using VANAS.Shared.Models;
 
@@ -17,8 +18,13 @@ namespace VANAS.Server.Controllers
         private const string TicketAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
         private readonly AppDbContext _db;
+        private readonly AgeService _age;
 
-        public EventsController(AppDbContext db) => _db = db;
+        public EventsController(AppDbContext db, AgeService age)
+        {
+            _db = db;
+            _age = age;
+        }
 
         private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -63,6 +69,7 @@ namespace VANAS.Server.Controllers
             var e = await _db.Events.FirstOrDefaultAsync(x => x.Id == id && x.IsPublished);
             if (e == null) return NotFound("Événement introuvable.");
             if (e.StartsAt < DateTime.UtcNow) return BadRequest("Cet événement a déjà commencé.");
+            if (await _age.ConsentPendingAsync(_db, CurrentUserId)) return StatusCode(StatusCodes.Status403Forbidden, AgeService.ConsentMessage);
 
             var userId = CurrentUserId;
             var existing = await _db.EventRegistrations.FirstOrDefaultAsync(r => r.EventId == id && r.UserId == userId);

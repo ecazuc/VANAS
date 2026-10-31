@@ -175,8 +175,14 @@ namespace VANAS.Web.Services
         public Task<ApiResult> UnregisterFromEventAsync(int eventId) =>
             SendAsync(HttpMethod.Delete, $"api/events/{eventId}/register");
 
-        public Task<ApiResult> RegisterAsync(string username, string password) =>
-            SendAsync(HttpMethod.Post, "api/auth/register", new RegisterRequest(username, password), authenticated: false);
+        public Task<ApiResult<RegisterResult>> RegisterAsync(string username, string password, DateOnly? birthDate) =>
+            SendAsync<RegisterResult>(HttpMethod.Post, "api/auth/register", new RegisterRequest(username, password, birthDate), authenticated: false);
+
+        public Task<ApiResult> RecordConsentAsync(int userId) =>
+            SendAsync(HttpMethod.Post, $"api/users/{userId}/parental-consent");
+
+        public Task<ApiResult> RevokeConsentAsync(int userId) =>
+            SendAsync(HttpMethod.Delete, $"api/users/{userId}/parental-consent");
 
         private async Task<ApiResult> SendAsync(HttpMethod method, string url, object? body = null, bool authenticated = true)
         {

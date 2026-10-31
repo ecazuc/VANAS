@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using VANAS.Server.Data;
+using VANAS.Server.Services;
 
 namespace VANAS.Server.Hubs
 {
@@ -19,21 +20,42 @@ namespace VANAS.Server.Hubs
         public static string RoomGroup(int gameId) => $"room-{gameId}";
 
         private readonly AppDbContext _db;
+        private readonly ChatPresence _presence;
+        private readonly AgeService _age;
 
-        public ChatHub(AppDbContext db) => _db = db;
+        public ChatHub(AppDbContext db, ChatPresence presence, AgeService age)
+        {
+            _db = db;
+            _presence = presence;
+            _age = age;
+        }
 
-        /// <summary>Starts receiving a game's room, only if the player plays that game and is not banned.</summary>
+        private int UserId => int.Parse(Context.User!.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        /// <summary>Starts receiving a game's room, only if the player plays that game, is not banned and may chat.</summary>
         public async Task<bool> JoinRoom(int gameId)
         {
-            var userId = int.Parse(Context.User!.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var userId = UserId;
             var plays = await _db.PlayerGames.AnyAsync(p => p.UserId == userId && p.GameId == gameId);
             var banned = await _db.ChatSanctions.AnyAsync(s => s.UserId == userId && s.IsBanned);
-            if (!plays || banned) return false;
+            var accepted = await _db.Profiles.AnyAsync(p => p.UserId == userId && p.ChatRulesAcceptedAt != null);
+            if (!plays || banned || !accepted || await _age.ConsentPendingAsync(_db, userId)) return false;
 
             await Groups.AddToGroupAsync(Context.ConnectionId, RoomGroup(gameId));
+            _presence.Joined(Context.ConnectionId, userId, gameId);
             return true;
         }
 
-        public Task LeaveRoom(int gameId) => Groups.RemoveFromGroupAsync(Context.ConnectionId, RoomGroup(gameId));
+        public async Task LeaveRoom(int gameId)
+        {
+            _presence.Left(Context.ConnectionId, gameId);
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, RoomGroup(gameId));
+        }
+
+        public override Task OnDisconnectedAsync(Exception? exception)
+        {
+            _presence.Disconnected(Context.ConnectionId);
+            return base.OnDisconnectedAsync(exception);
+        }
     }
 }

@@ -13,6 +13,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=vanas.db"));
 
 builder.Services.AddScoped<BalanceService>();
+builder.Services.AddSingleton<AgeService>();
+builder.Services.AddHostedService<ChatRetentionService>();
 builder.Services.AddSingleton<TokenService>();
 
 builder.Services
@@ -41,6 +43,7 @@ builder.Services
         };
     });
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<VANAS.Server.Hubs.ChatPresence>();
 builder.Services.AddAuthorization();
 
 builder.Services.AddControllers()

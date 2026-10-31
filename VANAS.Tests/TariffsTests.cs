@@ -35,7 +35,7 @@ public class TariffsTests : IClassFixture<VanasFactory>
 
     private async Task<(int id, HttpClient client)> PlayerAsync(string name)
     {
-        (await _factory.CreateClient().PostAsJsonAsync("/api/auth/register", new RegisterRequest(name, "Password-123"), Json)).EnsureSuccessStatusCode();
+        (await _factory.CreateClient().PostAsJsonAsync("/api/auth/register", new RegisterRequest(name, "Password-123", new DateOnly(1990, 1, 1)), Json)).EnsureSuccessStatusCode();
         var admin = await AdminAsync();
         var users = (await admin.GetFromJsonAsync<List<UserSummary>>("/api/users", Json))!;
         return (users.Single(u => u.Username == name).Id, await LoginAsync(name, "Password-123"));

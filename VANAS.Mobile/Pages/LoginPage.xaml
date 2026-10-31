@@ -24,6 +24,9 @@
                     <VerticalStackLayout x:Name="ConfirmBox" IsVisible="False" Spacing="8">
                         <Label Text="CONFIRMER LE MOT DE PASSE" FontSize="11" TextColor="#7C828F" />
                         <Entry x:Name="ConfirmEntry" Placeholder="mot de passe" IsPassword="True" TextColor="#C8CCD4" PlaceholderColor="#7C828F" />
+                        <Label Text="DATE DE NAISSANCE" FontSize="11" TextColor="#7C828F" />
+                        <DatePicker x:Name="BirthPicker" Date="1/1/2010" TextColor="#C8CCD4" DateSelected="OnBirthSelected" />
+                        <Label Text="À partir de 12 ans. Les mineurs ont besoin de l'accord d'un parent, à confirmer une fois au comptoir." FontSize="12" TextColor="#7C828F" />
                     </VerticalStackLayout>
 
                     <Label x:Name="ErrorLabel" TextColor="#FF4D5E" IsVisible="False" />

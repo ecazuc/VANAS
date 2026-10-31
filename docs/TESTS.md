@@ -126,5 +126,16 @@ Comptes de test : `copain` (joue à tous les jeux, règles acceptées), `alerteu
 - [ ] Supprimer un compte (console staff) : ses messages disparaissent.
 - [ ] Pas de notification quand l'application est fermée (prévu en M-5).
 
+## K. Âge minimum, accord parental, conservation (voir aussi `docs/DONNEES-PERSONNELLES.md`)
+- [ ] Inscription sans date de naissance : refusée (site, mobile, client PC). Moins de 12 ans : « Le café est réservé aux 12 ans et plus ». Exactement 12 ans aujourd'hui : accepté.
+- [ ] Inscription d'un joueur de 14 ans : message « un parent doit passer au comptoir » ; connexion possible, mais sur le PC « Accord parental requis », pas de messagerie, pas d'inscription à un événement.
+- [ ] Console staff > Comptes : la colonne Âge et l'étiquette « ACCORD PARENTAL À VALIDER » apparaissent ; « Accord reçu » demande une seconde confirmation (« un parent est présent »), puis le joueur peut jouer et écrire.
+- [ ] Mobile : le bandeau jaune « Accord parental requis » disparaît seul (en quelques secondes) quand le staff valide.
+- [ ] Un adulte (18 ans révolus) n'a besoin d'aucun accord.
+- [ ] Création d'un compte par le staff : la date de naissance est obligatoire.
+- [ ] Un mineur avec accord et un adulte peuvent s'écrire en privé s'ils partagent un jeu.
+- [ ] Banni de la messagerie, ou jeu retiré de « Mes jeux » : l'écran de salon ouvert ne reçoit plus les nouveaux messages immédiatement.
+- [ ] Les messages de plus de 90 jours disparaissent seuls (testé automatiquement ; la tâche tourne toutes les 6 heures).
+
 ## Ce qui n'est PAS encore fait
 Notifications poussées et publication de l'application (M-5), mot de passe oublié et suppression de compte par le joueur (W-5, RGPD), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, paiement en ligne, annulation d'une vente.

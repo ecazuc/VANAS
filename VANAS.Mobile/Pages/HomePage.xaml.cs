@@ -68,6 +68,7 @@ public partial class HomePage : ContentPage
         AccountLabel.Text = $"Compte {p.Username}";
         PlayedLabel.Text = Format(p.TotalMinutesPlayed);
         SessionsLabel.Text = $"{p.SessionCount} session(s)";
+        ConsentBox.IsVisible = _api.ConsentPending;
         PassLabel.Text = p.PassSummary == null ? null : "FORFAIT · " + p.PassSummary;
         PassLabel.IsVisible = p.PassSummary != null;
     }
@@ -78,6 +79,8 @@ public partial class HomePage : ContentPage
         _loading = true;
         try
         {
+            await _api.RefreshAccountAsync();
+            ConsentBox.IsVisible = _api.ConsentPending;
             var result = await _api.GetLiveAsync();
             if (!result.Ok || result.Value == null)
             {

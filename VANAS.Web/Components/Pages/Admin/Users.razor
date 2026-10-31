@@ -18,6 +18,7 @@
         <div class="row">
             <input placeholder="Identifiant" @bind="_newName" />
             <input placeholder="Mot de passe (8 car. min)" @bind="_newPassword" />
+            <input type="date" title="Date de naissance" @bind="_newBirth" />
             <input type="number" min="0" step="15" placeholder="Minutes offertes" @bind="_newMinutes" />
             <button class="btn" type="submit">Créer</button>
         </div>
@@ -66,13 +67,25 @@
 
     <table class="table">
         <thead>
-            <tr><th>Compte</th><th>Rôle</th><th>Temps restant</th><th>Statut</th><th>Ajouter du temps</th><th></th></tr>
+            <tr><th>Compte</th><th>Âge</th><th>Rôle</th><th>Temps restant</th><th>Statut</th><th>Ajouter du temps</th><th></th></tr>
         </thead>
         <tbody>
             @foreach (var u in Filtered)
             {
                 <tr>
                     <td><strong>@u.Username</strong></td>
+                    <td>
+                        @(u.Age is int age ? $"{age} ans" : "-")
+                        @if (u.ConsentPending)
+                        {
+                            <br /><span class="chip chip-off">ACCORD PARENTAL À VALIDER</span>
+                            <button class="btn small" @onclick="() => RecordConsentAsync(u)">@(_confirmConsent == u.Id ? "Confirmer : un parent est présent" : "Accord reçu")</button>
+                        }
+                        else if (u.Age is < 18)
+                        {
+                            <br /><span class="muted">accord parental enregistré</span>
+                        }
+                    </td>
                     <td>
                         @if (Auth.IsAdmin)
                         {
@@ -120,6 +133,8 @@
     private string _newName = string.Empty;
     private string _newPassword = string.Empty;
     private double _newMinutes = 60;
+    private DateTime? _newBirth;
+    private int? _confirmConsent;
     private int? _confirmDelete;
     private string? _message;
     private bool _messageIsError;
@@ -193,7 +208,13 @@
     private async Task CreateAsync()
     {
         var name = _newName.Trim();
-        var created = await Api.RegisterAsync(name, _newPassword);
+        if (_newBirth == null)
+        {
+            Report("Indiquez la date de naissance du joueur.", true);
+            return;
+        }
+
+        var created = await Api.RegisterAsync(name, _newPassword, DateOnly.FromDateTime(_newBirth.Value));
         if (!created.Ok)
         {
             Report(created.Error, true);
@@ -213,6 +234,7 @@
 
         Report($"Compte « {name} » créé.", false);
         _newName = _newPassword = string.Empty;
+        _newBirth = null;
         await LoadAsync();
     }
 
@@ -221,6 +243,21 @@
         var minutes = AmountFor(user.Id);
         var result = await Api.AddTimeAsync(user.Id, minutes, "Console staff");
         Report(result.Ok ? $"{(minutes > 0 ? "+" : "")}{minutes:0} min pour {user.Username}." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+
+    /// <summary>Two clicks: the first asks staff to check that a parent is really there, the second records it.</summary>
+    private async Task RecordConsentAsync(UserSummary user)
+    {
+        if (_confirmConsent != user.Id)
+        {
+            _confirmConsent = user.Id;
+            return;
+        }
+
+        _confirmConsent = null;
+        var result = await Api.RecordConsentAsync(user.Id);
+        Report(result.Ok ? $"Accord parental enregistré pour {user.Username}." : result.Error, !result.Ok);
         await LoadAsync();
     }
 

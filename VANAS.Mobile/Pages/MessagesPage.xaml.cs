@@ -40,6 +40,13 @@ public partial class MessagesPage : ContentPage
 
         ShowError(null);
         var s = status.Value;
+        if (s.ConsentPending)
+        {
+            RulesBox.IsVisible = MainBox.IsVisible = BannedLabel.IsVisible = false;
+            ShowError("Accord parental requis : un parent ou responsable légal doit passer au comptoir du café avant que vous puissiez utiliser la messagerie.");
+            return;
+        }
+
         RulesBox.IsVisible = !s.RulesAccepted;
         BannedLabel.IsVisible = s.RulesAccepted && s.IsBanned;
         MainBox.IsVisible = s.RulesAccepted && !s.IsBanned;

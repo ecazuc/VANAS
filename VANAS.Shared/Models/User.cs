@@ -15,6 +15,14 @@ namespace VANAS.Shared.Models
         public UserRole Role { get; set; } = UserRole.Client;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        /// <summary>Required at sign-up. Null only for accounts created before ages were collected (and the seeded admin): treated as adults.</summary>
+        public DateOnly? BirthDate { get; set; }
+
+        /// <summary>When staff recorded a parent's agreement at the counter; null until then.</summary>
+        public DateTime? ParentalConsentAt { get; set; }
+
+        public int? ParentalConsentById { get; set; }
+
         public Profile? Profile { get; set; }
     }
 }

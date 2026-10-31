@@ -22,6 +22,10 @@
             {
                 <label>Confirmer le mot de passe</label>
                 <input type="password" @bind="_confirm" autocomplete="new-password" />
+
+                <label>Date de naissance</label>
+                <input type="date" @bind="_birth" autocomplete="bday" />
+                <p class="muted">À partir de 12 ans. Les mineurs ont besoin de l'accord d'un parent, à confirmer une fois au comptoir du café.</p>
             }
 
             @if (_error != null)
@@ -51,6 +55,7 @@
     [SupplyParameterFromQuery(Name = "retour")] public string? ReturnUrl { get; set; }
 
     private string _username = string.Empty, _password = string.Empty, _confirm = string.Empty;
+    private DateTime? _birth;
     private string? _error;
     private bool _busy, _creating;
 
@@ -85,17 +90,26 @@
             return;
         }
 
+        if (_creating && _birth == null)
+        {
+            _error = "Indiquez votre date de naissance.";
+            return;
+        }
+
         _busy = true;
         try
         {
+            var consentPending = false;
             if (_creating)
             {
-                var created = await Api.RegisterAsync(_username, _password);
+                var created = await Api.RegisterAsync(_username, _password, DateOnly.FromDateTime(_birth!.Value));
                 if (!created.Ok)
                 {
                     _error = Translate(created.Error);
                     return;
                 }
+
+                consentPending = created.Value?.ConsentPending == true;
             }
 
             var result = await Api.LoginAsync(_username, _password);
@@ -106,7 +120,7 @@
             }
 
             await Auth.SignInAsync(result.Value);
-            Navigation.NavigateTo(Destination);
+            Navigation.NavigateTo(consentPending ? "/compte?accord=1" : Destination);
         }
         finally
         {

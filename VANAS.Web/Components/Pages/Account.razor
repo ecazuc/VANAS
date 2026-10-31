@@ -9,6 +9,11 @@
 <section class="container page">
     <h1>Mon compte</h1>
 
+    @if (Accord == "1")
+    {
+        <p class="msg ok">Compte créé. Comme vous êtes mineur, un parent ou responsable légal doit passer au comptoir du café pour valider votre inscription avant que vous puissiez jouer ou utiliser la messagerie.</p>
+    }
+
     @if (!_loaded)
     {
         <p class="muted">Chargement...</p>
@@ -91,6 +96,8 @@
 </section>
 
 @code {
+    [SupplyParameterFromQuery(Name = "accord")] public string? Accord { get; set; }
+
     private ProfileInfo? _profile;
     private List<TicketInfo> _tickets = new();
     private List<SessionHistoryItem> _sessions = new();

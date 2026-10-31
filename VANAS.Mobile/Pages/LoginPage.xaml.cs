@@ -5,13 +5,14 @@ namespace VANAS.Mobile.Pages;
 public partial class LoginPage : ContentPage
 {
     private readonly ApiService _api;
-    private bool _creating;
+    private bool _creating, _birthPicked;
 
     public LoginPage(ApiService api)
     {
         InitializeComponent();
         _api = api;
         ServerEntry.Text = _api.ServerUrl;
+        BirthPicker.MaximumDate = DateTime.Today;
     }
 
     protected override async void OnAppearing()
@@ -29,6 +30,8 @@ public partial class LoginPage : ContentPage
         ConfirmBox.IsVisible = _creating;
         ShowError(null);
     }
+
+    private void OnBirthSelected(object? sender, DateChangedEventArgs e) => _birthPicked = true;
 
     private void OnToggleServer(object? sender, EventArgs e) => ServerBox.IsVisible = !ServerBox.IsVisible;
 
@@ -57,6 +60,12 @@ public partial class LoginPage : ContentPage
             return;
         }
 
+        if (_creating && !_birthPicked)
+        {
+            ShowError("Indiquez votre date de naissance.");
+            return;
+        }
+
         if (_creating && password != ConfirmEntry.Text)
         {
             ShowError("Les deux mots de passe ne correspondent pas.");
@@ -68,7 +77,7 @@ public partial class LoginPage : ContentPage
         {
             if (_creating)
             {
-                var created = await _api.RegisterAsync(username, password);
+                var created = await _api.RegisterAsync(username, password, DateOnly.FromDateTime(BirthPicker.Date));
                 if (!created.Ok)
                 {
                     ShowError(created.Error);

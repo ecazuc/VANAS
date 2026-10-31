@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using VANAS.Server.Data;
 using VANAS.Server.Hubs;
+using VANAS.Server.Services;
 using VANAS.Shared.Contracts;
 using VANAS.Shared.Models;
 
@@ -21,11 +22,15 @@ namespace VANAS.Server.Controllers
         private readonly AppDbContext _db;
         private readonly IHubContext<ChatHub> _hub;
         private readonly string[] _bannedWords;
+        private readonly ChatPresence _presence;
+        private readonly AgeService _age;
 
-        public ChatController(AppDbContext db, IHubContext<ChatHub> hub, IConfiguration config)
+        public ChatController(AppDbContext db, IHubContext<ChatHub> hub, IConfiguration config, ChatPresence presence, AgeService age)
         {
             _db = db;
             _hub = hub;
+            _presence = presence;
+            _age = age;
             _bannedWords = config.GetSection("Chat:BannedWords").Get<string[]>() ?? Array.Empty<string>();
         }
 
@@ -51,13 +56,14 @@ namespace VANAS.Server.Controllers
             var profile = await _db.Profiles.FindAsync(userId);
             var sanction = await _db.ChatSanctions.FindAsync(userId);
             var mutedUntil = sanction?.MutedUntil > DateTime.UtcNow ? sanction.MutedUntil : null;
-            return new ChatStatus(profile?.ChatRulesAcceptedAt != null, sanction?.IsBanned == true, mutedUntil);
+            return new ChatStatus(profile?.ChatRulesAcceptedAt != null, sanction?.IsBanned == true, mutedUntil, await _age.ConsentPendingAsync(_db, userId));
         }
 
         /// <summary>Reading needs the rules accepted and no ban; writing also needs no active mute.</summary>
         private async Task<IActionResult?> RefuseAsync(bool forWriting)
         {
             var status = await StatusAsync(UserId);
+            if (status.ConsentPending) return StatusCode(StatusCodes.Status403Forbidden, AgeService.ConsentMessage);
             if (!status.RulesAccepted) return StatusCode(StatusCodes.Status403Forbidden, "Acceptez d'abord les règles de la messagerie.");
             if (status.IsBanned) return StatusCode(StatusCodes.Status403Forbidden, "L'accès à la messagerie vous a été retiré.");
             if (forWriting && status.MutedUntil != null)
@@ -81,9 +87,11 @@ namespace VANAS.Server.Controllers
             if (valid.Count != ids.Count) return BadRequest("Un des jeux n'existe pas.");
 
             var mine = await _db.PlayerGames.Where(p => p.UserId == UserId).ToListAsync();
+            var dropped = mine.Where(p => !valid.Contains(p.GameId)).Select(p => p.GameId).ToList();
             _db.PlayerGames.RemoveRange(mine.Where(p => !valid.Contains(p.GameId)));
             _db.PlayerGames.AddRange(valid.Where(id => mine.All(p => p.GameId != id)).Select(id => new PlayerGame { UserId = UserId, GameId = id }));
             await _db.SaveChangesAsync();
+            foreach (var gameId in dropped) await StopFeedAsync(UserId, gameId);
             return Ok(valid);
         }
 
@@ -343,6 +351,7 @@ namespace VANAS.Server.Controllers
 
             var message = await _db.ChatMessages.FindAsync(report.MessageId);
             var now = DateTime.UtcNow;
+            int? bannedUserId = null;
 
             if (message != null && request.Action != ModerationAction.Dismiss) message.IsHidden = true;
             if (message != null && request.Action is ModerationAction.Mute24Hours or ModerationAction.Mute7Days or ModerationAction.Ban)
@@ -355,7 +364,7 @@ namespace VANAS.Server.Controllers
                 }
 
                 sanction.Reason = report.Reason;
-                if (request.Action == ModerationAction.Ban) sanction.IsBanned = true;
+                if (request.Action == ModerationAction.Ban) { sanction.IsBanned = true; bannedUserId = message.SenderId; }
                 else sanction.MutedUntil = now.AddDays(request.Action == ModerationAction.Mute7Days ? 7 : 1);
             }
 
@@ -367,7 +376,17 @@ namespace VANAS.Server.Controllers
             }
 
             await _db.SaveChangesAsync();
+
+            // A banned player stops receiving the rooms right now, not only at their next reconnection.
+            if (bannedUserId is int banned) await StopFeedAsync(banned, null);
             return Ok();
+        }
+
+        /// <summary>Removes a player's live connections from one room (or all rooms when gameId is null).</summary>
+        private async Task StopFeedAsync(int userId, int? gameId)
+        {
+            foreach (var (connectionId, room) in _presence.Remove(userId, gameId))
+                await _hub.Groups.RemoveFromGroupAsync(connectionId, ChatHub.RoomGroup(room));
         }
 
         [Authorize(Roles = "Staff,Admin")]

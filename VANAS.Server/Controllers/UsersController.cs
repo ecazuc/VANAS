@@ -19,12 +19,14 @@ namespace VANAS.Server.Controllers
         private readonly AppDbContext _db;
         private readonly BalanceService _balance;
         private readonly IHubContext<SessionHub> _hub;
+        private readonly AgeService _age;
 
-        public UsersController(AppDbContext db, BalanceService balance, IHubContext<SessionHub> hub)
+        public UsersController(AppDbContext db, BalanceService balance, IHubContext<SessionHub> hub, AgeService age)
         {
             _db = db;
             _balance = balance;
             _hub = hub;
+            _age = age;
         }
 
         /// <summary>Tells the user's PC to sync right away (kick, added time) instead of waiting for the next heartbeat.</summary>
@@ -41,8 +43,37 @@ namespace VANAS.Server.Controllers
 
             var result = new List<UserSummary>();
             foreach (var u in users)
-                result.Add(new UserSummary(u.Id, u.Username, u.Role, await _balance.GetMinutesAsync(u.Id), online.Contains(u.Id)));
+                result.Add(new UserSummary(u.Id, u.Username, u.Role, await _balance.GetMinutesAsync(u.Id), online.Contains(u.Id), _age.AgeOf(u), _age.ConsentPending(u)));
             return Ok(result);
+        }
+
+        /// <summary>Staff record that a parent or guardian agreed in person at the counter.</summary>
+        [HttpPost("{id:int}/parental-consent")]
+        public async Task<IActionResult> RecordConsent(int id)
+        {
+            var user = await _db.Users.FindAsync(id);
+            if (user == null) return NotFound("User not found.");
+            user.ParentalConsentAt = DateTime.UtcNow;
+            user.ParentalConsentById = CurrentUserId;
+            await _db.SaveChangesAsync();
+            await NotifyAsync(id);
+            return Ok();
+        }
+
+        /// <summary>The parent withdraws their agreement: the player can no longer play or chat until it is recorded again.</summary>
+        [HttpDelete("{id:int}/parental-consent")]
+        public async Task<IActionResult> RevokeConsent(int id)
+        {
+            var user = await _db.Users.FindAsync(id);
+            if (user == null) return NotFound("User not found.");
+            user.ParentalConsentAt = null;
+            user.ParentalConsentById = null;
+
+            // An open session ends at its next heartbeat.
+            foreach (var s in await _db.Sessions.Where(s => s.UserId == id && s.EndedAt == null).ToListAsync()) s.KickRequested = true;
+            await _db.SaveChangesAsync();
+            await NotifyAsync(id);
+            return Ok();
         }
 
         [HttpPost("{id:int}/add-time")]

@@ -9,7 +9,7 @@ namespace VANAS.Client.Interfaces
         Task<ApiResponse<LoginResponse>> Login([Body] LoginRequest request);
 
         [Post("/api/auth/register")]
-        Task<IApiResponse> Register([Body] RegisterRequest request);
+        Task<IApiResponse<RegisterResult>> Register([Body] RegisterRequest request);
 
         [Post("/api/sessions/start")]
         Task<ApiResponse<SessionInfo>> StartSession([Body] StartSessionRequest request);

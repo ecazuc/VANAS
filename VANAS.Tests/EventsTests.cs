@@ -30,7 +30,7 @@ public class EventsTests : IClassFixture<VanasFactory>
 
     private async Task<HttpClient> PlayerAsync(string name)
     {
-        (await _factory.CreateClient().PostAsJsonAsync("/api/auth/register", new RegisterRequest(name, "Password-123"), Json)).EnsureSuccessStatusCode();
+        (await _factory.CreateClient().PostAsJsonAsync("/api/auth/register", new RegisterRequest(name, "Password-123", new DateOnly(1990, 1, 1)), Json)).EnsureSuccessStatusCode();
         return await LoginAsync(name, "Password-123");
     }
 

@@ -8,6 +8,10 @@
         <VerticalStackLayout Padding="24,48,24,24" Spacing="14" MaximumWidthRequest="460">
             <Label Text="VANAS" FontSize="28" FontAttributes="Bold" TextColor="#FCEE0A" />
 
+            <Border x:Name="ConsentBox" IsVisible="False" BackgroundColor="#3A3200" Stroke="#FCEE0A" StrokeThickness="1" Padding="14">
+                <Label Text="Accord parental requis : un parent ou responsable légal doit passer au comptoir du café pour valider votre inscription avant que vous puissiez jouer ou utiliser la messagerie." TextColor="#FCEE0A" FontSize="13" />
+            </Border>
+
             <Border x:Name="WarningBox" IsVisible="False" BackgroundColor="#3A1D22" Stroke="#FF4D5E" StrokeThickness="1" Padding="14">
                 <Label x:Name="WarningLabel" TextColor="#FF4D5E" FontAttributes="Bold" />
             </Border>

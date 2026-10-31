@@ -69,18 +69,28 @@ namespace VANAS.Client.Views
                 return;
             }
 
+            if (!DateOnly.TryParseExact(txtBirth.Text.Trim(), "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var birth))
+            {
+                ShowStatus("Indiquez votre date de naissance au format JJ/MM/AAAA.", isError: true);
+                return;
+            }
+
             ShowStatus("Création du compte...", isError: false);
-            var response = await App.Api.Register(new RegisterRequest(txtUser.Text, txtPass.Password));
+            var response = await App.Api.Register(new RegisterRequest(txtUser.Text, txtPass.Password, birth));
             if (!response.IsSuccessStatusCode)
             {
                 ShowStatus(ApiErrors.Describe(response), isError: true);
                 return;
             }
 
+            var pending = response.Content?.ConsentPending == true;
             btnToggle_Click(this, new RoutedEventArgs());
             txtPass.Clear();
             txtConfirm.Clear();
-            ShowStatus("Compte créé. Demandez du temps au comptoir, puis connectez-vous.", isError: false);
+            txtBirth.Clear();
+            ShowStatus(pending
+                ? "Compte créé. Un parent ou responsable légal doit passer au comptoir pour valider votre inscription."
+                : "Compte créé. Demandez du temps au comptoir, puis connectez-vous.", isError: false);
         }
 
         private async Task LoginAsync()

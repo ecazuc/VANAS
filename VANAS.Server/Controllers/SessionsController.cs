@@ -20,10 +20,13 @@ namespace VANAS.Server.Controllers
         private readonly AppDbContext _db;
         private readonly BalanceService _balance;
 
-        public SessionsController(AppDbContext db, BalanceService balance)
+        private readonly AgeService _age;
+
+        public SessionsController(AppDbContext db, BalanceService balance, AgeService age)
         {
             _db = db;
             _balance = balance;
+            _age = age;
         }
 
         private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -33,6 +36,8 @@ namespace VANAS.Server.Controllers
         {
             var name = request.StationName.Trim();
             if (name.Length is 0 or > 64) return BadRequest("Invalid station name.");
+
+            if (await _age.ConsentPendingAsync(_db, UserId)) return StatusCode(StatusCodes.Status403Forbidden, AgeService.ConsentMessage);
 
             var left = await _balance.GetMinutesAsync(UserId);
             if (left <= 0) return StatusCode(StatusCodes.Status402PaymentRequired, "No time left.");

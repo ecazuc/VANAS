@@ -24,6 +24,9 @@
                 <StackPanel x:Name="panelConfirm" Visibility="Collapsed">
                     <TextBlock Text="CONFIRMER LE MOT DE PASSE" Style="{StaticResource LabelText}"/>
                     <PasswordBox x:Name="txtConfirm"/>
+                    <TextBlock Text="DATE DE NAISSANCE (JJ/MM/AAAA)" Style="{StaticResource LabelText}"/>
+                    <TextBox x:Name="txtBirth" MaxLength="10"/>
+                    <TextBlock Text="À partir de 12 ans. Les mineurs ont besoin de l'accord d'un parent, à confirmer une fois au comptoir." Style="{StaticResource LabelText}" TextWrapping="Wrap" Margin="0,6,0,0"/>
                 </StackPanel>
 
                 <TextBlock x:Name="lblStatus" TextWrapping="Wrap" FontSize="14" Margin="0,18,0,0" MinHeight="20"/>

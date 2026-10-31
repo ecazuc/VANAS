@@ -4,15 +4,18 @@ namespace VANAS.Shared.Contracts
 {
     public record LoginRequest(string Username, string Password);
 
-    public record LoginResponse(string Token, string Username, UserRole Role, double MinutesLeft);
+    public record LoginResponse(string Token, string Username, UserRole Role, double MinutesLeft, bool ConsentPending = false);
 
-    public record RegisterRequest(string Username, string Password);
+    public record RegisterRequest(string Username, string Password, DateOnly? BirthDate = null);
+
+    /// <summary>ConsentPending: the player is a minor and a parent must agree at the counter before playing or chatting.</summary>
+    public record RegisterResult(bool ConsentPending);
 
     public record AddTimeRequest(double Minutes, string? Note);
 
     public record SetRoleRequest(UserRole Role);
 
-    public record UserSummary(int Id, string Username, UserRole Role, double MinutesLeft, bool IsOnline);
+    public record UserSummary(int Id, string Username, UserRole Role, double MinutesLeft, bool IsOnline, int? Age = null, bool ConsentPending = false);
 
     public record StartSessionRequest(string StationName);
 
@@ -141,7 +144,7 @@ namespace VANAS.Shared.Contracts
 
 namespace VANAS.Shared.Contracts
 {
-    public record ChatStatus(bool RulesAccepted, bool IsBanned, DateTime? MutedUntil);
+    public record ChatStatus(bool RulesAccepted, bool IsBanned, DateTime? MutedUntil, bool ConsentPending = false);
 
     public record SetGamesRequest(List<int> GameIds);
 

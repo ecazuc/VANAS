@@ -49,6 +49,9 @@ public class ApiService
 
     public UserRole Role { get; private set; } = UserRole.Client;
 
+    /// <summary>A minor whose parent has not yet agreed at the counter: cannot play or chat yet.</summary>
+    public bool ConsentPending { get; private set; }
+
     public bool IsStaff => Role is UserRole.Staff or UserRole.Admin;
 
     public static string NormalizeServer(string value)
@@ -76,7 +79,7 @@ public class ApiService
 
         // A 401 clears the token inside RawAsync; an unreachable server keeps it for the next attempt.
         var me = await SendAsync<LoginResponse>(HttpMethod.Get, "api/auth/me");
-        if (me.Ok && me.Value != null) Role = me.Value.Role;
+        if (me.Ok && me.Value != null) { Role = me.Value.Role; ConsentPending = me.Value.ConsentPending; }
         SessionChanged?.Invoke();
         return me.Ok;
     }
@@ -88,20 +91,28 @@ public class ApiService
 
         _token = result.Value.Token;
         Role = result.Value.Role;
+        ConsentPending = result.Value.ConsentPending;
         try { await SecureStorage.Default.SetAsync(TokenKey, _token); }
         catch (Exception) { /* secure storage can be unavailable (e.g. no lock screen): stay signed in for this run only */ }
         SessionChanged?.Invoke();
         return new ApiResult((string?)null);
     }
 
-    public async Task<ApiResult> RegisterAsync(string username, string password)
+    public async Task<ApiResult<RegisterResult>> RegisterAsync(string username, string password, DateOnly birthDate)
     {
-        var result = await SendAsync(HttpMethod.Post, "api/auth/register", new RegisterRequest(username, password), authenticated: false);
-        return new ApiResult(Translate(result.Error));
+        var result = await SendAsync<RegisterResult>(HttpMethod.Post, "api/auth/register", new RegisterRequest(username, password, birthDate), authenticated: false);
+        return new ApiResult<RegisterResult>(result.Value, Translate(result.Error));
     }
 
     public Task<ApiResult<ProfileInfo>> GetProfileAsync() =>
         SendAsync<ProfileInfo>(HttpMethod.Get, "api/profile/me");
+
+    /// <summary>Re-reads the account state (role, parental agreement) that staff can change while the app is open.</summary>
+    public async Task RefreshAccountAsync()
+    {
+        var me = await SendAsync<LoginResponse>(HttpMethod.Get, "api/auth/me");
+        if (me.Ok && me.Value != null) { Role = me.Value.Role; ConsentPending = me.Value.ConsentPending; }
+    }
 
     public Task<ApiResult<LiveStatus>> GetLiveAsync() =>
         SendAsync<LiveStatus>(HttpMethod.Get, "api/profile/me/live");
@@ -171,6 +182,7 @@ public class ApiService
     {
         _token = null;
         Role = UserRole.Client;
+        ConsentPending = false;
         SecureStorage.Default.Remove(TokenKey);
         SessionChanged?.Invoke();
     }
