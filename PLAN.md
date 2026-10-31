@@ -161,4 +161,5 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 | M-2 — temps restant en direct sur le mobile (décompte, EN JEU/HORS SESSION, mise à jour immédiate via SignalR, alertes 10/5/1 min dans l'app, historique) ; notification poussée app fermée = M-5 (Firebase) | Code terminé, à tester | `m-2` |
 | M-3 — événements sur mobile, inscription, billet avec QR code, scanner staff (caméra Android + saisie manuelle) ; code caméra Android non compilé faute d'Android SDK | Code terminé, à tester | `m-3` |
 | Tarifs — formules (heures, forfait illimité avec plafond par jour, forfait d'heures), vente au comptoir, caisse du jour, grille publique ; heures sans expiration | Code terminé, à tester | `tarifs` |
-| W-5 / M-4, M-5 / PC-7 | À faire | |
+| M-4 - messagerie : jeux joués, salons par jeu, messages privés, blocage, signalement, modération staff (masquer, silence, bannissement), filtre liens/téléphones/spam, limite de vitesse, temps réel | Code terminé, à tester | `m-4` |
+| W-5 / M-5 / PC-7 | À faire | |

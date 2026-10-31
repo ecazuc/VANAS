@@ -127,6 +127,46 @@ public class ApiService
     public Task<ApiResult<CheckInResult>> CheckInAsync(string ticketCode) =>
         SendAsync<CheckInResult>(HttpMethod.Post, "api/events/check-in", new CheckInRequest(ticketCode));
 
+    // ----- Chat -----
+
+    public Task<ApiResult<ChatStatus>> GetChatStatusAsync() => SendAsync<ChatStatus>(HttpMethod.Get, "api/chat/status");
+
+    public Task<ApiResult<ChatStatus>> AcceptChatRulesAsync() => SendAsync<ChatStatus>(HttpMethod.Post, "api/chat/rules/accept");
+
+    public Task<ApiResult<List<CatalogGameDto>>> GetCatalogAsync() => SendAsync<List<CatalogGameDto>>(HttpMethod.Get, "api/catalog");
+
+    public Task<ApiResult<List<int>>> GetMyGamesAsync() => SendAsync<List<int>>(HttpMethod.Get, "api/chat/games/mine");
+
+    public Task<ApiResult<List<int>>> SetMyGamesAsync(IEnumerable<int> gameIds) =>
+        SendAsync<List<int>>(HttpMethod.Put, "api/chat/games/mine", new SetGamesRequest(gameIds.ToList()));
+
+    public Task<ApiResult<List<PlayerSuggestion>>> GetSuggestionsAsync() =>
+        SendAsync<List<PlayerSuggestion>>(HttpMethod.Get, "api/chat/suggestions");
+
+    public Task<ApiResult<List<ConversationDto>>> GetConversationsAsync() =>
+        SendAsync<List<ConversationDto>>(HttpMethod.Get, "api/chat/conversations");
+
+    public Task<ApiResult<List<ChatMessageDto>>> GetRoomMessagesAsync(int gameId, int afterId = 0) =>
+        SendAsync<List<ChatMessageDto>>(HttpMethod.Get, $"api/chat/rooms/{gameId}/messages?afterId={afterId}");
+
+    public Task<ApiResult<ChatMessageDto>> SendRoomMessageAsync(int gameId, string text) =>
+        SendAsync<ChatMessageDto>(HttpMethod.Post, $"api/chat/rooms/{gameId}/messages", new SendMessageRequest(text));
+
+    public Task<ApiResult<List<ChatMessageDto>>> GetDirectMessagesAsync(int userId, int afterId = 0) =>
+        SendAsync<List<ChatMessageDto>>(HttpMethod.Get, $"api/chat/direct/{userId}/messages?afterId={afterId}");
+
+    public Task<ApiResult<ChatMessageDto>> SendDirectMessageAsync(int userId, string text) =>
+        SendAsync<ChatMessageDto>(HttpMethod.Post, $"api/chat/direct/{userId}/messages", new SendMessageRequest(text));
+
+    public Task<ApiResult<List<BlockedPlayer>>> GetBlocksAsync() => SendAsync<List<BlockedPlayer>>(HttpMethod.Get, "api/chat/blocks");
+
+    public Task<ApiResult> BlockAsync(int userId) => SendAsync(HttpMethod.Post, $"api/chat/blocks/{userId}");
+
+    public Task<ApiResult> UnblockAsync(int userId) => SendAsync(HttpMethod.Delete, $"api/chat/blocks/{userId}");
+
+    public Task<ApiResult> ReportAsync(int messageId, string reason) =>
+        SendAsync(HttpMethod.Post, $"api/chat/messages/{messageId}/report", new ReportRequest(reason));
+
     public void SignOut()
     {
         _token = null;

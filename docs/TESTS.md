@@ -111,5 +111,20 @@ Exemples de formules déjà créés dans la base de développement (prix de dém
 - [ ] Deux forfaits du même type vendus au même joueur : le second commence à la fin du premier.
 - [ ] Pas encore possible : annuler ou rembourser une vente (à corriger à la main avec « + min » avec un nombre négatif et une note).
 
+## J. Messagerie (M-4)
+Comptes de test : `copain` (joue à tous les jeux, règles acceptées), `alerteur`, `staffeur`. Les mots de passe sont `motdepassetest`.
+- [ ] Mobile, onglet Messages, premier passage : les règles s'affichent ; rien d'autre n'est accessible avant « J'accepte ».
+- [ ] Choisir des jeux (pastilles jaunes) : un salon par jeu apparaît ; les joueurs qui partagent un jeu sont suggérés (`copain`).
+- [ ] Salon : écrire un message ; sur un second téléphone ou via `copain`, il apparaît en direct. Quitter et revenir : l'historique est là.
+- [ ] Discussion privée avec un joueur suggéré : les messages arrivent en direct des deux côtés.
+- [ ] Liens, numéros de téléphone, message vide, message trop long : refusés avec un message clair. Plus de 6 messages en 10 secondes : « Doucement ».
+- [ ] Toucher un message d'un autre joueur : « Signaler ce message » (motif demandé) et « Bloquer ... ».
+- [ ] Bloquer un joueur : ses messages disparaissent du salon, il ne peut plus vous écrire, vous ne vous voyez plus dans les suggestions ; « Débloquer » dans la liste en bas de la page Messages.
+- [ ] Console staff, page Modération : le signalement arrive avec le message, l'auteur, le motif et le contexte (salon ou privé).
+- [ ] « Masquer le message » : il disparaît pour tout le monde. « Silence 24 h » : le joueur voit « vous ne pouvez pas écrire jusqu'au ... ». « Bannir » : plus aucun accès à la messagerie. « Lever la sanction » dans la liste du bas.
+- [ ] Un joueur qui n'a pas accepté les règles n'apparaît pas dans les suggestions des autres.
+- [ ] Supprimer un compte (console staff) : ses messages disparaissent.
+- [ ] Pas de notification quand l'application est fermée (prévu en M-5).
+
 ## Ce qui n'est PAS encore fait
-QR code et application mobile (M-1 à M-5), mot de passe oublié et suppression de compte (W-5 / RGPD), messagerie (M-4), application mobile (M-1 à M-5), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, tarifs et forfaits, paiement.
+Notifications poussées et publication de l'application (M-5), mot de passe oublié et suppression de compte par le joueur (W-5, RGPD), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, paiement en ligne, annulation d'une vente.

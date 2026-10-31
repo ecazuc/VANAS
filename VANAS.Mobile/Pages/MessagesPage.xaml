@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VANAS.Mobile.Pages.MessagesPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#16181C">
+    <RefreshView x:Name="Refresher" Refreshing="OnRefreshing" RefreshColor="#FCEE0A">
+        <ScrollView>
+            <VerticalStackLayout Padding="24,48,24,24" Spacing="12" MaximumWidthRequest="460">
+                <Label Text="MESSAGES" FontSize="28" FontAttributes="Bold" TextColor="#FCEE0A" />
+
+                <Label x:Name="ErrorLabel" TextColor="#FF4D5E" IsVisible="False" />
+
+                <!-- Rules: shown until accepted -->
+                <Border x:Name="RulesBox" IsVisible="False" BackgroundColor="#23262D" Stroke="#FCEE0A" StrokeThickness="1" Padding="18">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="RÈGLES DE LA MESSAGERIE" FontSize="11" TextColor="#7C828F" />
+                        <Label x:Name="RulesLabel" TextColor="#C8CCD4" FontSize="14" />
+                        <Button Text="J'ACCEPTE LES RÈGLES" BackgroundColor="#FCEE0A" TextColor="#16181C" FontAttributes="Bold" CornerRadius="0" Clicked="OnAcceptRules" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label x:Name="BannedLabel" Text="L'accès à la messagerie vous a été retiré par l'équipe du café." TextColor="#FF4D5E" IsVisible="False" />
+
+                <VerticalStackLayout x:Name="MainBox" IsVisible="False" Spacing="10">
+                    <Label x:Name="MutedLabel" TextColor="#FF4D5E" IsVisible="False" />
+
+                    <Label Text="MES JEUX" FontSize="11" TextColor="#7C828F" Margin="0,8,0,0" />
+                    <Label Text="Choisissez les jeux auxquels vous jouez : ils ouvrent les salons et vous font trouver des joueurs." FontSize="12" TextColor="#7C828F" />
+                    <FlexLayout x:Name="GamesBox" Wrap="Wrap" JustifyContent="Start" />
+
+                    <Label Text="SALONS" FontSize="11" TextColor="#7C828F" Margin="0,8,0,0" />
+                    <VerticalStackLayout x:Name="RoomsBox" Spacing="8" />
+                    <Label x:Name="NoRoomsLabel" Text="Choisissez un jeu ci-dessus pour entrer dans son salon." FontSize="12" TextColor="#7C828F" IsVisible="False" />
+
+                    <Label Text="JOUEURS QUI JOUENT COMME VOUS" FontSize="11" TextColor="#7C828F" Margin="0,8,0,0" />
+                    <VerticalStackLayout x:Name="PlayersBox" Spacing="8" />
+                    <Label x:Name="NoPlayersLabel" Text="Personne pour l'instant." FontSize="12" TextColor="#7C828F" IsVisible="False" />
+
+                    <Label Text="CONVERSATIONS" FontSize="11" TextColor="#7C828F" Margin="0,8,0,0" />
+                    <VerticalStackLayout x:Name="ConversationsBox" Spacing="8" />
+                    <Label x:Name="NoConversationsLabel" Text="Aucune conversation privée." FontSize="12" TextColor="#7C828F" IsVisible="False" />
+
+                    <Label x:Name="BlocksTitle" Text="JOUEURS BLOQUÉS" FontSize="11" TextColor="#7C828F" Margin="0,8,0,0" IsVisible="False" />
+                    <VerticalStackLayout x:Name="BlocksBox" Spacing="6" />
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

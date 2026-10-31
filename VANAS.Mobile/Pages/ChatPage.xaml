@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VANAS.Mobile.Pages.ChatPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#16181C">
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Padding="16,36,16,12" RowSpacing="8">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*">
+            <Button Text="←" BackgroundColor="Transparent" TextColor="#7C828F" FontSize="20" Padding="0,0,12,0" Clicked="OnBack" />
+            <Label x:Name="TitleLabel" Grid.Column="1" FontSize="20" FontAttributes="Bold" TextColor="#FCEE0A" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+        </Grid>
+
+        <ScrollView x:Name="Scroller" Grid.Row="1">
+            <VerticalStackLayout x:Name="MessagesBox" Spacing="8" Padding="0,4" />
+        </ScrollView>
+
+        <Label x:Name="StatusLabel" Grid.Row="2" FontSize="12" TextColor="#FF4D5E" IsVisible="False" />
+
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <Entry x:Name="InputEntry" Placeholder="Votre message..." TextColor="#C8CCD4" PlaceholderColor="#7C828F"
+                   MaxLength="500" ReturnType="Send" Completed="OnSend" />
+            <Button Grid.Column="1" Text="ENVOYER" BackgroundColor="#FCEE0A" TextColor="#16181C" FontAttributes="Bold" CornerRadius="0" Clicked="OnSend" />
+        </Grid>
+    </Grid>
+</ContentPage>

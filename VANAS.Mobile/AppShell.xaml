@@ -16,6 +16,7 @@
     <TabBar Route="main">
         <ShellContent Title="Accueil" Route="home" ContentTemplate="{DataTemplate pages:HomePage}" />
         <ShellContent Title="Événements" Route="events" ContentTemplate="{DataTemplate pages:EventsPage}" />
+        <ShellContent Title="Messages" Route="messages" ContentTemplate="{DataTemplate pages:MessagesPage}" />
         <ShellContent x:Name="ScanTab" Title="Scanner" Route="scan" IsVisible="False" ContentTemplate="{DataTemplate pages:ScanPage}" />
     </TabBar>
 
