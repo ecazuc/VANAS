@@ -22,7 +22,8 @@ namespace VANAS.Client.Views
                 Kiosk.Lock(this);
             };
             Closing += (_, e) => e.Cancel = Kiosk.Enabled && !_allowClose && !App.Exiting;
-            Deactivated += (_, _) => { if (Kiosk.Enabled && !_allowClose) Dispatcher.BeginInvoke(Activate); };
+            // The lock takes the focus back, except while the admin PIN window (owned by this one) is open: it needs the keyboard.
+            Deactivated += (_, _) => { if (Kiosk.Enabled && !_allowClose && OwnedWindows.Count == 0) Dispatcher.BeginInvoke(Activate); };
         }
 
         private void ShowStatus(string text, bool isError)

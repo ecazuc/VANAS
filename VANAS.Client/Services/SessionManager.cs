@@ -58,12 +58,15 @@ namespace VANAS.Client.Services
         /// <summary>A message typed by staff in the console for this PC.</summary>
         public event Action<string>? StaffMessage;
 
+        public bool IsRunning => _running;
+
         public double MinutesLeft => Math.Max(0, _serverMinutes - (DateTime.UtcNow - _syncedAt).TotalMinutes);
 
         public void Start(SessionInfo info)
         {
             _sessionId = info.SessionId;
             AppLog.Info($"Session {info.SessionId} started.");
+            AppState.Write(inSession: true);
             Sync(info.MinutesLeft);
             _warnings.Reset(info.MinutesLeft);
             _offlineSince = null;
@@ -114,6 +117,7 @@ namespace VANAS.Client.Services
         {
             if (!_running) return;
             AppLog.Info("Session ended: customer logged out.");
+            AppState.Write(inSession: false);
             Halt();
             try { await _api.EndSession(_sessionId); } catch { /* the server will stop billing after the heartbeat gap anyway */ }
         }
@@ -220,6 +224,7 @@ namespace VANAS.Client.Services
         {
             if (!_running) return;
             AppLog.Info($"Session ended: {reason}.");
+            AppState.Write(inSession: false);
             Halt();
             Ended?.Invoke(reason);
         }

@@ -112,7 +112,10 @@ Copy-Item (Join-Path $here 'Uninstall-VanasClient.ps1') $toolsDir -Force
 if (-not $SkipScheduledTask) {
     $script = Join-Path $toolsDir 'Update-VanasClient.ps1'
     $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$script`" -InstallDir `"$InstallDir`""
-    $triggers = @((New-ScheduledTaskTrigger -AtStartup), (New-ScheduledTaskTrigger -Daily -At 4am))
+    # 2 minutes after startup: on a kiosk PC the client starts by itself at logon, and the updater must find it up and idle.
+    $startup = New-ScheduledTaskTrigger -AtStartup
+    $startup.Delay = 'PT2M'
+    $triggers = @($startup, (New-ScheduledTaskTrigger -Daily -At 4am))
     $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
     Register-ScheduledTask -TaskName 'VANAS Client Update' -Action $action -Trigger $triggers -Principal $principal -Force | Out-Null
     Write-Host 'Tache planifiee "VANAS Client Update" creee (demarrage + 04h00).'

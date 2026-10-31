@@ -39,12 +39,12 @@ Options utiles : `-InstallDir` (autre dossier), `-SourceZip` (paquet local au li
 
 ## 3. Mise à jour automatique
 
-À chaque démarrage, la tâche interroge le serveur. Elle ne fait **rien** si :
+La tâche interroge le serveur **2 minutes après chaque démarrage** et chaque jour à 4 h. Elle ne fait **rien** si :
 - le serveur est éteint ou n'a rien publié (le PC garde sa version) ;
-- le client est en cours d'utilisation (nouvel essai au prochain passage) ;
-- la version du serveur n'est pas plus récente.
+- la version du serveur n'est pas plus récente ;
+- un joueur est en session : le client écrit `C:\ProgramData\VANAS\state.json` (« en session » ou non, rafraîchi toutes les 30 secondes) ; un état « en session », absent ou ancien fait attendre le passage suivant.
 
-Sinon elle télécharge le paquet, **vérifie sa somme de contrôle**, prépare la nouvelle version à côté de l'ancienne, puis l'échange ; si l'échange échoue, l'ancienne version est remise. `client.json` est toujours conservé. Forcer une mise à jour : `C:\VANAS\tools\Update-VanasClient.ps1 -Force`.
+Sinon elle télécharge le paquet, **vérifie sa somme de contrôle** et le prépare à côté de l'ancienne version pendant que le client tourne. Si personne ne joue, elle arrête le client, échange les dossiers (l'ancienne version est remise si l'échange échoue) et **redémarre le PC** pour lancer la nouvelle version : en mode kiosque, le client est le « bureau » Windows, un redémarrage est la façon propre de le relancer. `client.json` est toujours conservé. Options : `-Force` (réinstaller même sans version plus récente), `-NoRestart`.
 
 Le résultat est écrit dans `C:\ProgramData\VANAS\logs\update.log`.
 

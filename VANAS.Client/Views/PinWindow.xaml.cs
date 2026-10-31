@@ -1,4 +1,5 @@
 using System.Windows;
+using VANAS.Client.Services;
 using VANAS.Shared.Security;
 
 namespace VANAS.Client.Views
@@ -14,7 +15,7 @@ namespace VANAS.Client.Views
         public PinWindow()
         {
             InitializeComponent();
-            Loaded += (_, _) => txtPin.Focus();
+            Loaded += (_, _) => { Activate(); txtPin.Focus(); AppLog.Info("Admin PIN window opened."); };
         }
 
         private void btnOk_Click(object sender, RoutedEventArgs e)
@@ -28,11 +29,13 @@ namespace VANAS.Client.Views
             if (PinHasher.Verify(txtPin.Password, App.Config.AdminPinHash))
             {
                 _failures = 0;
+                AppLog.Warn("Admin PIN accepted: leaving kiosk mode.");
                 DialogResult = true;
                 return;
             }
 
             txtPin.Clear();
+            AppLog.Warn($"Admin PIN refused (attempt {_failures + 1}).");
             if (++_failures >= MaxAttempts)
             {
                 _failures = 0;

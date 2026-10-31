@@ -30,6 +30,11 @@ namespace VANAS.Client
 
             Config = ClientConfig.Load();
             AppLog.Init(Version, Config.StationName);
+            AppState.Init();
+            AppState.Write(inSession: false);
+            var stateTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+            stateTimer.Tick += (_, _) => AppState.Write(Session?.IsRunning == true);
+            stateTimer.Start();
 
             // A crash on a kiosk PC leaves a black screen and nobody to ask: record why, and keep the client alive when it is safe to.
             DispatcherUnhandledException += (_, args) =>
