@@ -118,6 +118,24 @@ public class ApiTests : IClassFixture<VanasFactory>
     }
 
     [Fact]
+    public async Task Live_status_tells_the_phone_whether_the_player_is_on_a_pc()
+    {
+        var (_, client) = await NewClientUserAsync("phone_live", 30);
+
+        var before = (await client.GetFromJsonAsync<LiveStatus>("/api/profile/me/live", Json))!;
+        Assert.False(before.InSession);
+        Assert.Null(before.StationName);
+        Assert.Equal(30, before.MinutesLeft, 1);
+
+        (await client.PostAsJsonAsync("/api/sessions/start", new StartSessionRequest("PC-PHONE"), Json)).EnsureSuccessStatusCode();
+        var during = (await client.GetFromJsonAsync<LiveStatus>("/api/profile/me/live", Json))!;
+        Assert.True(during.InSession);
+        Assert.Equal("PC-PHONE", during.StationName);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _factory.CreateClient().GetAsync("/api/profile/me/live")).StatusCode);
+    }
+
+    [Fact]
     public async Task Session_cannot_start_without_time()
     {
         var (_, client) = await NewClientUserAsync("broke", 0);

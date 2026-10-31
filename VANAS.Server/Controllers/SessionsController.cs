@@ -15,7 +15,7 @@ namespace VANAS.Server.Controllers
     public class SessionsController : ControllerBase
     {
         /// <summary>Max time billed per heartbeat, so a long gap (crash, network loss) is not charged in full.</summary>
-        private static readonly TimeSpan MaxBilledGap = TimeSpan.FromSeconds(90);
+
 
         private readonly AppDbContext _db;
         private readonly BalanceService _balance;
@@ -104,7 +104,7 @@ namespace VANAS.Server.Controllers
         {
             var now = DateTime.UtcNow;
             var gap = now - session.LastHeartbeatAt;
-            if (gap > MaxBilledGap) gap = MaxBilledGap;
+            if (gap > SessionRules.MaxBilledGap) gap = SessionRules.MaxBilledGap;
             if (gap > TimeSpan.Zero) session.MinutesConsumed += gap.TotalMinutes;
             session.LastHeartbeatAt = now;
         }

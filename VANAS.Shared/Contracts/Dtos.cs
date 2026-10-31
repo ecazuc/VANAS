@@ -104,3 +104,9 @@ namespace VANAS.Shared.Contracts
 
     public record CheckInResult(string DisplayName, string EventTitle);
 }
+
+namespace VANAS.Shared.Contracts
+{
+    /// <summary>What the mobile app shows live: the balance and whether the player is currently on a PC.</summary>
+    public record LiveStatus(double MinutesLeft, bool InSession, string? StationName);
+}

@@ -59,6 +59,26 @@ namespace VANAS.Server.Controllers
             return Ok(await BuildAsync(user));
         }
 
+        [HttpGet("me/live")]
+        public async Task<IActionResult> GetLive()
+        {
+            var cutoff = SessionRules.LiveCutoff;
+            var live = await _db.Sessions
+                .Where(s => s.UserId == UserId && s.EndedAt == null && s.LastHeartbeatAt > cutoff)
+                .OrderByDescending(s => s.StartedAt)
+                .Select(s => new { s.Station!.Name, s.LastHeartbeatAt })
+                .FirstOrDefaultAsync();
+
+            var minutes = await _balance.GetMinutesAsync(UserId);
+            if (live == null) return Ok(new LiveStatus(minutes, false, null));
+
+            // The balance only drops at each heartbeat: also take off the time that has passed since the last one,
+            // so the phone does not jump back up between two heartbeats.
+            var pending = DateTime.UtcNow - live.LastHeartbeatAt;
+            if (pending > SessionRules.MaxBilledGap) pending = SessionRules.MaxBilledGap;
+            return Ok(new LiveStatus(Math.Max(0, minutes - Math.Max(0, pending.TotalMinutes)), true, live.Name));
+        }
+
         [HttpGet("me/sessions")]
         public async Task<IActionResult> GetMySessions([FromQuery] int take = 20)
         {

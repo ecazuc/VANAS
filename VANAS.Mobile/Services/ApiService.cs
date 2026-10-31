@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using VANAS.Shared.Contracts;
+using VANAS.Shared.Models;
 
 namespace VANAS.Mobile.Services;
 
@@ -40,6 +41,13 @@ public class ApiService
 
     public bool IsSignedIn => _token != null;
 
+    /// <summary>Used by the live connection to the server (SignalR).</summary>
+    public string? Token => _token;
+
+    public UserRole Role { get; private set; } = UserRole.Client;
+
+    public bool IsStaff => Role is UserRole.Staff or UserRole.Admin;
+
     public static string NormalizeServer(string value)
     {
         var v = (value ?? string.Empty).Trim().TrimEnd('/');
@@ -59,6 +67,7 @@ public class ApiService
 
         // A 401 clears the token inside RawAsync; an unreachable server keeps it for the next attempt.
         var me = await SendAsync<LoginResponse>(HttpMethod.Get, "api/auth/me");
+        if (me.Ok && me.Value != null) Role = me.Value.Role;
         return me.Ok;
     }
 
@@ -68,6 +77,7 @@ public class ApiService
         if (!result.Ok || result.Value == null) return new ApiResult(Translate(result.Error) ?? "Connexion impossible.");
 
         _token = result.Value.Token;
+        Role = result.Value.Role;
         try { await SecureStorage.Default.SetAsync(TokenKey, _token); }
         catch (Exception) { /* secure storage can be unavailable (e.g. no lock screen): stay signed in for this run only */ }
         return new ApiResult((string?)null);
@@ -82,9 +92,34 @@ public class ApiService
     public Task<ApiResult<ProfileInfo>> GetProfileAsync() =>
         SendAsync<ProfileInfo>(HttpMethod.Get, "api/profile/me");
 
+    public Task<ApiResult<LiveStatus>> GetLiveAsync() =>
+        SendAsync<LiveStatus>(HttpMethod.Get, "api/profile/me/live");
+
+    public Task<ApiResult<List<SessionHistoryItem>>> GetSessionsAsync() =>
+        SendAsync<List<SessionHistoryItem>>(HttpMethod.Get, "api/profile/me/sessions?take=10");
+
+    public Task<ApiResult<List<EventSummary>>> GetEventsAsync() =>
+        SendAsync<List<EventSummary>>(HttpMethod.Get, "api/events", authenticated: false);
+
+    public Task<ApiResult<EventDetail>> GetEventAsync(int id) =>
+        SendAsync<EventDetail>(HttpMethod.Get, $"api/events/{id}", authenticated: false);
+
+    public Task<ApiResult<List<TicketInfo>>> GetMyTicketsAsync() =>
+        SendAsync<List<TicketInfo>>(HttpMethod.Get, "api/events/mine");
+
+    public Task<ApiResult<TicketInfo>> RegisterForEventAsync(int id) =>
+        SendAsync<TicketInfo>(HttpMethod.Post, $"api/events/{id}/register");
+
+    public Task<ApiResult> UnregisterFromEventAsync(int id) =>
+        SendAsync(HttpMethod.Delete, $"api/events/{id}/register");
+
+    public Task<ApiResult<CheckInResult>> CheckInAsync(string ticketCode) =>
+        SendAsync<CheckInResult>(HttpMethod.Post, "api/events/check-in", new CheckInRequest(ticketCode));
+
     public void SignOut()
     {
         _token = null;
+        Role = UserRole.Client;
         SecureStorage.Default.Remove(TokenKey);
     }
 

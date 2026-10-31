@@ -8,6 +8,10 @@
         <VerticalStackLayout Padding="24,48,24,24" Spacing="14" MaximumWidthRequest="460">
             <Label Text="VANAS" FontSize="28" FontAttributes="Bold" TextColor="#FCEE0A" />
 
+            <Border x:Name="WarningBox" IsVisible="False" BackgroundColor="#3A1D22" Stroke="#FF4D5E" StrokeThickness="1" Padding="14">
+                <Label x:Name="WarningLabel" TextColor="#FF4D5E" FontAttributes="Bold" />
+            </Border>
+
             <Border BackgroundColor="#23262D" Stroke="#FCEE0A" StrokeThickness="1" Padding="18">
                 <VerticalStackLayout Spacing="4">
                     <Label Text="BIENVENUE" FontSize="11" TextColor="#7C828F" />
@@ -18,9 +22,12 @@
 
             <Border BackgroundColor="#23262D" Stroke="#2E323B" StrokeThickness="1" Padding="18">
                 <VerticalStackLayout Spacing="4">
-                    <Label Text="TEMPS RESTANT" FontSize="11" TextColor="#7C828F" />
-                    <Label x:Name="TimeLabel" Text="--" FontSize="36" FontAttributes="Bold" TextColor="#FCEE0A" />
-                    <Label Text="Le temps se recharge au comptoir." FontSize="12" TextColor="#7C828F" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="TEMPS RESTANT" FontSize="11" TextColor="#7C828F" VerticalOptions="Center" />
+                        <Label x:Name="StateLabel" FontSize="11" FontAttributes="Bold" TextColor="#7C828F" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                    <Label x:Name="TimeLabel" Text="--" FontSize="40" FontAttributes="Bold" TextColor="#FCEE0A" />
+                    <Label x:Name="LinkLabel" FontSize="12" TextColor="#7C828F" />
                 </VerticalStackLayout>
             </Border>
 
@@ -32,9 +39,12 @@
                 </VerticalStackLayout>
             </Border>
 
+            <Label Text="DERNIÈRES SESSIONS" FontSize="11" TextColor="#7C828F" Margin="0,8,0,0" />
+            <VerticalStackLayout x:Name="HistoryBox" Spacing="6" />
+            <Label x:Name="NoHistoryLabel" Text="Aucune session pour l'instant." FontSize="12" TextColor="#7C828F" IsVisible="False" />
+
             <Label x:Name="ErrorLabel" TextColor="#FF4D5E" IsVisible="False" />
 
-            <Button Text="ACTUALISER" BackgroundColor="#2E323B" TextColor="#C8CCD4" CornerRadius="0" Clicked="OnRefresh" />
             <Button Text="SE DÉCONNECTER" BackgroundColor="Transparent" TextColor="#FF4D5E" BorderColor="#FF4D5E" BorderWidth="1" CornerRadius="0" Clicked="OnSignOut" />
         </VerticalStackLayout>
     </ScrollView>
