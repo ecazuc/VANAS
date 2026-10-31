@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VANAS.Mobile.Pages.HomePage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#16181C">
+    <ScrollView>
+        <VerticalStackLayout Padding="24,48,24,24" Spacing="14" MaximumWidthRequest="460">
+            <Label Text="VANAS" FontSize="28" FontAttributes="Bold" TextColor="#FCEE0A" />
+
+            <Border BackgroundColor="#23262D" Stroke="#FCEE0A" StrokeThickness="1" Padding="18">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="BIENVENUE" FontSize="11" TextColor="#7C828F" />
+                    <Label x:Name="NameLabel" Text="..." FontSize="24" FontAttributes="Bold" TextColor="#C8CCD4" />
+                    <Label x:Name="AccountLabel" FontSize="12" TextColor="#7C828F" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border BackgroundColor="#23262D" Stroke="#2E323B" StrokeThickness="1" Padding="18">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="TEMPS RESTANT" FontSize="11" TextColor="#7C828F" />
+                    <Label x:Name="TimeLabel" Text="--" FontSize="36" FontAttributes="Bold" TextColor="#FCEE0A" />
+                    <Label Text="Le temps se recharge au comptoir." FontSize="12" TextColor="#7C828F" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border BackgroundColor="#23262D" Stroke="#2E323B" StrokeThickness="1" Padding="18">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="TEMPS JOUÉ" FontSize="11" TextColor="#7C828F" />
+                    <Label x:Name="PlayedLabel" Text="--" FontSize="22" FontAttributes="Bold" TextColor="#C8CCD4" />
+                    <Label x:Name="SessionsLabel" FontSize="12" TextColor="#7C828F" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Label x:Name="ErrorLabel" TextColor="#FF4D5E" IsVisible="False" />
+
+            <Button Text="ACTUALISER" BackgroundColor="#2E323B" TextColor="#C8CCD4" CornerRadius="0" Clicked="OnRefresh" />
+            <Button Text="SE DÉCONNECTER" BackgroundColor="Transparent" TextColor="#FF4D5E" BorderColor="#FF4D5E" BorderWidth="1" CornerRadius="0" Clicked="OnSignOut" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

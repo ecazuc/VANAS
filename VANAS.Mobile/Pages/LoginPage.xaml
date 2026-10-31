@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VANAS.Mobile.Pages.LoginPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#16181C">
+    <ScrollView>
+        <VerticalStackLayout Padding="24,60,24,24" Spacing="12" MaximumWidthRequest="460">
+            <Label Text="VANAS" FontSize="44" FontAttributes="Bold" TextColor="#FCEE0A" HorizontalOptions="Center" />
+            <Label Text="CYBERCAFÉ" FontSize="12" TextColor="#7C828F" HorizontalOptions="Center" Margin="0,0,0,24" />
+
+            <Border BackgroundColor="#23262D" Stroke="#FCEE0A" StrokeThickness="1" Padding="18">
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="TitleLabel" Text="Connexion" FontSize="22" FontAttributes="Bold" TextColor="#FCEE0A" />
+
+                    <Label Text="IDENTIFIANT" FontSize="11" TextColor="#7C828F" />
+                    <Entry x:Name="UsernameEntry" Placeholder="identifiant" TextColor="#C8CCD4" PlaceholderColor="#7C828F"
+                           Keyboard="Plain" ReturnType="Next" MaxLength="32" />
+
+                    <Label Text="MOT DE PASSE" FontSize="11" TextColor="#7C828F" />
+                    <Entry x:Name="PasswordEntry" Placeholder="mot de passe" IsPassword="True" TextColor="#C8CCD4" PlaceholderColor="#7C828F"
+                           ReturnType="Done" Completed="OnSubmit" />
+
+                    <VerticalStackLayout x:Name="ConfirmBox" IsVisible="False" Spacing="8">
+                        <Label Text="CONFIRMER LE MOT DE PASSE" FontSize="11" TextColor="#7C828F" />
+                        <Entry x:Name="ConfirmEntry" Placeholder="mot de passe" IsPassword="True" TextColor="#C8CCD4" PlaceholderColor="#7C828F" />
+                    </VerticalStackLayout>
+
+                    <Label x:Name="ErrorLabel" TextColor="#FF4D5E" IsVisible="False" />
+
+                    <Button x:Name="SubmitButton" Text="ME CONNECTER" BackgroundColor="#FCEE0A" TextColor="#16181C"
+                            FontAttributes="Bold" CornerRadius="0" Clicked="OnSubmit" Margin="0,8,0,0" />
+                    <ActivityIndicator x:Name="Busy" IsRunning="False" IsVisible="False" Color="#FCEE0A" />
+
+                    <Button x:Name="ModeButton" Text="Pas encore de compte ? En créer un" BackgroundColor="Transparent"
+                            TextColor="#C8CCD4" Clicked="OnToggleMode" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Paramètres du serveur" BackgroundColor="Transparent" TextColor="#7C828F" FontSize="12" Clicked="OnToggleServer" />
+            <VerticalStackLayout x:Name="ServerBox" IsVisible="False" Spacing="6">
+                <Label Text="ADRESSE DU SERVEUR DU CAFÉ" FontSize="11" TextColor="#7C828F" />
+                <Entry x:Name="ServerEntry" TextColor="#C8CCD4" Keyboard="Url" />
+                <Label Text="Sur un téléphone, indiquez l'adresse du PC serveur sur le Wi-Fi du café (exemple : http://192.168.1.20:5049)."
+                       FontSize="12" TextColor="#7C828F" />
+                <Button Text="Enregistrer l'adresse" BackgroundColor="#2E323B" TextColor="#C8CCD4" CornerRadius="0" Clicked="OnSaveServer" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -157,4 +157,5 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 | W-2 — blog d'actus (Markdown sécurisé, éditeur staff avec aperçu, RSS) | Code terminé, à tester | `w-2` |
 | W-3 — événements (API, inscription + billet à code, contrôle d'entrée, pages publiques et staff) | Code terminé, à tester | `w-3` |
 | W-4 — comptes clients sur le site (connexion, création de compte, Mon compte, inscription aux événements depuis la page de l'événement) | Code terminé, à tester | `w-4` |
-| W-5 / M-1 à M-5 / PC-7 | À faire | |
+| M-1 — application mobile : socle MAUI, connexion/création de compte, jeton sécurisé, accueil avec le temps restant (testé en version Windows ; Android à tester sur téléphone) | Code terminé, à tester | `m-1` |
+| W-5 / M-2 à M-5 / PC-7 | À faire | |
