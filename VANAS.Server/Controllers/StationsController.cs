@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using VANAS.Server.Data;
+using VANAS.Server.Hubs;
 using VANAS.Server.Services;
 using VANAS.Shared.Contracts;
 
@@ -14,11 +16,13 @@ namespace VANAS.Server.Controllers
     {
         private readonly AppDbContext _db;
         private readonly BalanceService _balance;
+        private readonly IHubContext<SessionHub> _hub;
 
-        public StationsController(AppDbContext db, BalanceService balance)
+        public StationsController(AppDbContext db, BalanceService balance, IHubContext<SessionHub> hub)
         {
             _db = db;
             _balance = balance;
+            _hub = hub;
         }
 
         [HttpGet]
@@ -41,6 +45,31 @@ namespace VANAS.Server.Controllers
                         await _balance.GetMinutesAsync(session.UserId), session.StartedAt));
             }
             return Ok(result);
+        }
+
+        /// <summary>Sends a short message to the player using a PC. It appears on their screen within seconds.</summary>
+        [HttpPost("{id:int}/message")]
+        public async Task<IActionResult> SendMessage(int id, [FromBody] StationMessageRequest request)
+        {
+            var text = (request.Text ?? string.Empty).Trim();
+            if (text.Length is 0 or > 200) return BadRequest("Le message doit faire entre 1 et 200 caractères.");
+
+            var station = await _db.Stations.FindAsync(id);
+            if (station == null) return NotFound("Poste introuvable.");
+
+            var cutoff = SessionRules.LiveCutoff;
+            var userId = await _db.Sessions
+                .Where(s => s.StationId == id && s.EndedAt == null && s.LastHeartbeatAt > cutoff)
+                .Select(s => (int?)s.UserId).FirstOrDefaultAsync();
+            if (userId == null) return BadRequest("Ce poste n'est pas utilisé en ce moment.");
+
+            station.PendingMessage = text;
+            station.PendingMessageAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+
+            // Nudge the PC so it syncs right away instead of at its next heartbeat.
+            await _hub.Clients.User(userId.Value.ToString()).SendAsync(SessionHub.RefreshMethod);
+            return Ok();
         }
     }
 }

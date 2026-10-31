@@ -86,8 +86,18 @@ namespace VANAS.Server.Controllers
                 Close(session, SessionEndReason.TimeExpired);
             }
 
+            // A staff message for this PC rides on the heartbeat, once. One that waited too long is dropped.
+            string? staffMessage = null;
+            var station = await _db.Stations.FindAsync(session.StationId);
+            if (station?.PendingMessage != null)
+            {
+                if (status == SessionStatus.Active && station.PendingMessageAt > DateTime.UtcNow.AddMinutes(-10)) staffMessage = station.PendingMessage;
+                station.PendingMessage = null;
+                station.PendingMessageAt = null;
+            }
+
             await _db.SaveChangesAsync();
-            return Ok(new HeartbeatResponse(status, left));
+            return Ok(new HeartbeatResponse(status, left, staffMessage));
         }
 
         [HttpPost("{id:int}/end")]

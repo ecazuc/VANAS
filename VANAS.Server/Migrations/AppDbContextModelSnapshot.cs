@@ -477,6 +477,12 @@ namespace VANAS.Server.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PendingMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PendingMessageAt")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")

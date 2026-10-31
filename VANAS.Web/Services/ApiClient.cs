@@ -37,6 +37,9 @@ namespace VANAS.Web.Services
         public Task<ApiResult<List<StationStatus>>> GetStationsAsync() =>
             SendAsync<List<StationStatus>>(HttpMethod.Get, "api/stations");
 
+        public Task<ApiResult> SendStationMessageAsync(int stationId, string text) =>
+            SendAsync(HttpMethod.Post, $"api/stations/{stationId}/message", new StationMessageRequest(text));
+
         public Task<ApiResult<List<UserSummary>>> GetUsersAsync() =>
             SendAsync<List<UserSummary>>(HttpMethod.Get, "api/users");
 

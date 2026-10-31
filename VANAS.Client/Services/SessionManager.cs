@@ -55,6 +55,9 @@ namespace VANAS.Client.Services
         /// <summary>Raised once when 10, 5 and 1 minute(s) remain (re-armed if staff adds time).</summary>
         public event Action<int>? TimeWarning;
 
+        /// <summary>A message typed by staff in the console for this PC.</summary>
+        public event Action<string>? StaffMessage;
+
         public double MinutesLeft => Math.Max(0, _serverMinutes - (DateTime.UtcNow - _syncedAt).TotalMinutes);
 
         public void Start(SessionInfo info)
@@ -163,6 +166,8 @@ namespace VANAS.Client.Services
                 GoOnline();
                 Sync(response.Content.MinutesLeft);
                 TimeChanged?.Invoke(MinutesLeft);
+
+                if (!string.IsNullOrWhiteSpace(response.Content.StaffMessage)) StaffMessage?.Invoke(response.Content.StaffMessage);
 
                 switch (response.Content.Status)
                 {

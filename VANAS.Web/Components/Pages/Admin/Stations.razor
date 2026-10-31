@@ -35,6 +35,10 @@
                     <p class="big">@s.Username</p>
                     <p>Temps restant : <strong>@Format.Minutes(s.MinutesLeft ?? 0)</strong></p>
                     <p class="muted">Depuis @(s.SessionStartedAt?.ToLocalTime().ToString("HH:mm"))</p>
+                    <div class="row">
+                        <input placeholder="Message au joueur..." maxlength="200" value="@DraftFor(s.StationId)" @onchange="e => SetDraft(s.StationId, e.Value?.ToString())" />
+                        <button class="btn small" @onclick="() => SendMessageAsync(s)">Envoyer</button>
+                    </div>
                     <button class="btn small danger" @onclick="() => KickAsync(s)">Kicker</button>
                 }
                 else
@@ -71,6 +75,23 @@
             _message = result.Error;
             _messageIsError = true;
         }
+    }
+
+    private readonly Dictionary<int, string> _drafts = new();
+
+    private string DraftFor(int stationId) => _drafts.GetValueOrDefault(stationId, string.Empty);
+
+    private void SetDraft(int stationId, string? text) => _drafts[stationId] = text ?? string.Empty;
+
+    private async Task SendMessageAsync(StationStatus station)
+    {
+        var text = DraftFor(station.StationId);
+        if (string.IsNullOrWhiteSpace(text)) return;
+        var result = await Api.SendStationMessageAsync(station.StationId, text);
+        _messageIsError = !result.Ok;
+        _message = result.Ok ? $"Message envoyé à {station.Name}." : result.Error;
+        if (result.Ok) _drafts.Remove(station.StationId);
+        await LoadAsync();
     }
 
     private async Task KickAsync(StationStatus station)

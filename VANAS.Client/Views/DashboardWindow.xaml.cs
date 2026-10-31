@@ -50,6 +50,7 @@ namespace VANAS.Client.Views
             App.Session.OnlineChanged += OnOnlineChanged;
             App.Session.Ended += OnEnded;
             App.Session.TimeWarning += OnTimeWarning;
+            App.Session.StaffMessage += OnStaffMessage;
 
             // The overlay shows the clock over games, and gets out of the way while this window is in front.
             Activated += (_, _) => _overlay.Hide();
@@ -84,6 +85,7 @@ namespace VANAS.Client.Views
             App.Session.OnlineChanged -= OnOnlineChanged;
             App.Session.Ended -= OnEnded;
             App.Session.TimeWarning -= OnTimeWarning;
+            App.Session.StaffMessage -= OnStaffMessage;
         }
 
         // ---------- Time ----------
@@ -105,6 +107,16 @@ namespace VANAS.Client.Views
         private void OnTimeWarning(int minutes)
         {
             var message = minutes == 1 ? "Il vous reste 1 minute !" : $"Il vous reste {minutes} minutes";
+            lblWarning.Text = message;
+            bannerWarning.Visibility = Visibility.Visible;
+            _bannerTimer.Stop();
+            _bannerTimer.Start();
+            _overlay.ShowWarning(message);
+        }
+
+        private void OnStaffMessage(string text)
+        {
+            var message = "Message du staff : " + text;
             lblWarning.Text = message;
             bannerWarning.Visibility = Visibility.Visible;
             _bannerTimer.Stop();

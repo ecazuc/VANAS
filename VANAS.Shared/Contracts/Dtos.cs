@@ -28,7 +28,9 @@ namespace VANAS.Shared.Contracts
         Kicked = 2
     }
 
-    public record HeartbeatResponse(SessionStatus Status, double MinutesLeft);
+    public record HeartbeatResponse(SessionStatus Status, double MinutesLeft, string? StaffMessage = null);
+
+    public record StationMessageRequest(string Text);
 }
 
 namespace VANAS.Shared.Contracts
