@@ -57,3 +57,5 @@ nunit-*.xml
 *.db-shm
 *.db-wal
 appsettings.Production.json
+
+VANAS.Server/ClientUpdates/

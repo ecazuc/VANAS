@@ -165,14 +165,17 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 | Tarifs — formules (heures, forfait illimité avec plafond par jour, forfait d'heures), vente au comptoir, caisse du jour, grille publique ; heures sans expiration | Code terminé, à tester | `tarifs` |
 | M-4 - messagerie : jeux joués, salons par jeu, messages privés, blocage, signalement, modération staff (masquer, silence, bannissement), filtre liens/téléphones/spam, limite de vitesse, temps réel | Code terminé, à tester | `m-4` |
 | Âge minimum 12 ans, accord parental au comptoir (avant 15 ans), coupure de la diffusion des salons, purge automatique des messages (90 jours), document de données personnelles | Code terminé, à tester | `age-conservation` |
-| PC-7 — installateur du client PC | À faire | |
+| Message du staff à un poste ; encaissement des événements au contrôle d'entrée ; annulation/remboursement d'une vente | Code terminé, à tester | `staff-features` |
+| Export et suppression de son compte par le joueur ; message d'accord parental sur « Mon compte » | Code terminé, à tester | `account-data` |
+| Page « Le café » modifiable par l'administrateur (horaires, adresse, contact, photos, présentation) ; calendrier des événements | Code terminé, à tester | `site-content` |
+| PC-7 — installateur du client PC : script d'installation, mise à jour automatique au démarrage (somme de contrôle, retour arrière), journaux | Code terminé, à tester (installation et mise à jour essayées dans un dossier de test, pas encore sur un vrai PC ni avec le mode kiosque) | `pc-7` |
 | W-5 — mise en ligne du site | Mise de côté jusqu'après la refonte du design | |
 | M-5 — publication de l'application mobile | Mise de côté jusqu'après la refonte du design | |
 
 ## Ordre à suivre à partir d'ici
 
 1. **Valider ce qui est codé** : test du mode kiosque en VM (PC-2), puis les checklists de `docs/TESTS.md` (sections A à K) sur les PC et le Pixel.
-2. **Terminer les fonctionnalités** de la liste « Éléments laissés incomplets » ci-dessous, et PC-7 (installateur).
+2. **Terminer les fonctionnalités** restantes de la liste « Éléments laissés incomplets » ci-dessous (presque tout est fait ; PC-7 est codé).
 3. **Refonte du design** des trois applications (client PC, site, mobile), avec le nom et le logo définitifs.
 4. **Seulement ensuite** : mise en ligne (W-5), publication de l'application (M-5), paiement en ligne.
 
@@ -180,15 +183,13 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 
 | Élément | Étape d'origine | État actuel |
 |---|---|---|
-| Message du staff envoyé à un poste | PC-6 | Non fait. |
-| Détection de Battle.net | PC-4 | Seuls Steam, Epic et Riot sont détectés. |
-| Encaissement des événements au comptoir | W-3 | Le prix s'affiche mais le paiement n'est pas enregistré dans la caisse. À préciser : le staff vend l'entrée comme une formule, ou la valide au contrôle d'entrée. |
-| Suppression de son compte par le joueur, export de ses données | RGPD | Non fait ; la suppression passe aujourd'hui par le staff. |
-| Annulation ou remboursement d'une vente | Tarifs | Non fait ; correction manuelle avec « + min » négatif. |
-| Vue calendrier des événements | W-3 | Liste seulement. |
-| Site vitrine : horaires, adresse, contact, plan d'accès, photos, configuration des PC | W-1 | Rubriques « à définir ». |
-| Message d'accord parental sur le site | Âge | « Mon compte » ne l'affiche qu'à la création du compte. |
-| Installateur du client PC | PC-7 | À faire : installation, configuration par fichier, mise à jour automatique, journaux. |
+| Détection de Battle.net | PC-4 | Seuls Steam, Epic et Riot sont détectés. Non fait : la détection et le lancement ne peuvent pas être vérifiés sans Battle.net installé et un compte. À reprendre avec un poste équipé. |
+| Photos téléversées depuis la console | W-1 | La page « Le café » prend des adresses de photos (http/https) ; pas de téléversement de fichiers. |
+| Durcissement de l'installateur en kiosque | PC-7 | L'enchaînement `-EnableKiosk` (PIN, compte dédié, ouverture automatique) n'a été essayé qu'en simulation : à valider dans la VM. |
+
+### Terminé depuis la première version de cette liste
+
+Message du staff à un poste ; encaissement des événements au contrôle d'entrée (montant, moyen de paiement, vente dans la caisse du jour) ; annulation ou remboursement d'une vente (avec motif, conservée dans les comptes) ; export et suppression de son compte par le joueur (site et mobile) ; message d'accord parental sur « Mon compte » ; vue calendrier des événements ; page « Le café » modifiable (horaires, adresse, contact, photos, présentation) ; installateur du client PC (installation, mise à jour automatique, journaux).
 
 ### Codé mais jamais validé en conditions réelles
 

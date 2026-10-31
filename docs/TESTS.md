@@ -138,5 +138,36 @@ Comptes de test : `copain` (joue à tous les jeux, règles acceptées), `alerteu
 - [ ] Banni de la messagerie, ou jeu retiré de « Mes jeux » : l'écran de salon ouvert ne reçoit plus les nouveaux messages immédiatement.
 - [ ] Les messages de plus de 90 jours disparaissent seuls (testé automatiquement ; la tâche tourne toutes les 6 heures).
 
+## L. Fonctionnalités ajoutées avant la refonte du design
+**Message à un poste**
+- [ ] Console staff > Postes en direct : sur un poste « EN JEU », saisir un message et « Envoyer » : la bannière jaune « Message du staff : ... » apparaît sur le PC du joueur en quelques secondes et reste 10 secondes, une seule fois.
+- [ ] Un poste libre n'a pas de champ de message ; un message de plus de 200 caractères est refusé.
+
+**Entrée payante d'un événement**
+- [ ] Console staff > Événements > Contrôle d'entrée : pour un événement payant, la saisie du code affiche « À encaisser : X € » et trois boutons de moyen de paiement ; l'entrée n'est validée qu'après le choix. Pour un événement gratuit, elle est validée tout de suite.
+- [ ] Mobile (staffeur) > Scanner : même chose avec une fenêtre « À encaisser ».
+- [ ] La vente « Entrée : <événement> » apparaît dans la Caisse du jour, avec le bon moyen de paiement. Un second passage du même billet est refusé et n'est pas facturé deux fois.
+
+**Annulation d'une vente**
+- [ ] Console staff > Caisse > « Annuler la vente » (motif obligatoire, 3 caractères minimum) : la vente reste listée barrée avec « ANNULÉE » et son motif, et sort des totaux.
+- [ ] Annuler un pack d'heures retire ces heures du compte (jamais en dessous de zéro) ; annuler un forfait le termine immédiatement ; annuler une entrée d'événement la rend payable de nouveau.
+- [ ] Une vente ne peut être annulée qu'une fois.
+
+**Mes données (site et mobile)**
+- [ ] Site > Mon compte > « Télécharger mes données » : un fichier JSON se télécharge avec le compte, les sessions, les achats, les billets et les messages envoyés, sans mot de passe. Mobile : bouton « Télécharger mes données » (partage du fichier).
+- [ ] « Supprimer mon compte » : le mot de passe est demandé ; un mauvais mot de passe est refusé ; le bon supprime le compte (connexion impossible ensuite). Les achats restent dans la caisse sous le nom « (compte supprimé) ».
+- [ ] Un compte staff ne peut pas se supprimer ainsi.
+- [ ] Un joueur de moins de 15 ans sans accord voit un bandeau rouge sur « Mon compte », qui disparaît quand le staff valide l'accord.
+
+**Page « Le café » et calendrier**
+- [ ] Console staff (administrateur) > Infos du café : saisir horaires, adresse, téléphone, e-mail, photos (adresses http), présentation Markdown ; « Enregistrer » ; la page publique `/cafe` les affiche. Un compte staff simple voit la page mais ne peut pas enregistrer.
+- [ ] Site > Événements > « Calendrier » : grille du mois, événement cliquable le jour prévu, boutons mois précédent et suivant ; sur téléphone, la grille reste lisible.
+
+**Installation et mise à jour des PC (PC-7, voir `tools\pc\README.md`)**
+- [ ] Sur le PC de développement : `tools\Publish-Client.ps1` publie une version ; `http://<serveur>:5049/api/client/version` la décrit.
+- [ ] Sur un PC (ou dans la VM), en administrateur : `Install-VanasClient.ps1 -ServerUrl ... -StationName PC-01` installe le client dans `C:\VANAS\Client` ; la tâche « VANAS Client Update » existe dans le planificateur de tâches.
+- [ ] Publier une version plus élevée, redémarrer le PC : `C:\VANAS\Client\version.txt` passe au nouveau numéro, `client.json` est inchangé, `C:\ProgramData\VANAS\logs\update.log` le raconte. Pendant qu'un client est ouvert, la mise à jour attend.
+- [ ] `C:\ProgramData\VANAS\logs\client-AAAA-MM-JJ.log` contient le démarrage du client et les débuts et fins de session.
+
 ## Ce qui n'est PAS encore fait
-Notifications poussées et publication de l'application (M-5), mot de passe oublié et suppression de compte par le joueur (W-5, RGPD), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, paiement en ligne, annulation d'une vente.
+Battle.net (détection et lancement), téléversement de photos, notifications poussées et publication de l'application (M-5), mot de passe oublié (W-5), hébergement du site (W-5), PostgreSQL, paiement en ligne.

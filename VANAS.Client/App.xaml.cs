@@ -16,6 +16,11 @@ namespace VANAS.Client
         public static IGamingApi Api { get; private set; } = null!;
         public static SessionManager Session { get; private set; } = null!;
 
+        /// <summary>Build number (from the project file), shown in the log and compared by the updater.</summary>
+        public static string Version { get; } =
+            System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion.Split('+')[0] ?? "0.0.0";
+
         /// <summary>JWT of the logged-in customer, attached to API calls by <see cref="BearerTokenHandler"/>.</summary>
         public static string? Token { get; set; }
 
@@ -24,6 +29,20 @@ namespace VANAS.Client
             base.OnStartup(e);
 
             Config = ClientConfig.Load();
+            AppLog.Init(Version, Config.StationName);
+
+            // A crash on a kiosk PC leaves a black screen and nobody to ask: record why, and keep the client alive when it is safe to.
+            DispatcherUnhandledException += (_, args) =>
+            {
+                AppLog.Error("Unhandled error in the interface", args.Exception);
+                args.Handled = true;
+            };
+            AppDomain.CurrentDomain.UnhandledException += (_, args) => AppLog.Error("Fatal error", args.ExceptionObject as Exception);
+            TaskScheduler.UnobservedTaskException += (_, args) =>
+            {
+                AppLog.Error("Background task failed", args.Exception);
+                args.SetObserved();
+            };
 
             var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
             json.Converters.Add(new JsonStringEnumConverter());
@@ -71,6 +90,7 @@ namespace VANAS.Client
 
         protected override void OnExit(ExitEventArgs e)
         {
+            AppLog.Info("Client stopped.");
             Kiosk.Release();
             base.OnExit(e);
         }

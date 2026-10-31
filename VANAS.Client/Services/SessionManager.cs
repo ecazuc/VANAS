@@ -63,6 +63,7 @@ namespace VANAS.Client.Services
         public void Start(SessionInfo info)
         {
             _sessionId = info.SessionId;
+            AppLog.Info($"Session {info.SessionId} started.");
             Sync(info.MinutesLeft);
             _warnings.Reset(info.MinutesLeft);
             _offlineSince = null;
@@ -112,6 +113,7 @@ namespace VANAS.Client.Services
         public async Task StopAsync()
         {
             if (!_running) return;
+            AppLog.Info("Session ended: customer logged out.");
             Halt();
             try { await _api.EndSession(_sessionId); } catch { /* the server will stop billing after the heartbeat gap anyway */ }
         }
@@ -195,6 +197,7 @@ namespace VANAS.Client.Services
             if (_offlineSince == null)
             {
                 _offlineSince = DateTime.UtcNow;
+                AppLog.Warn("Server unreachable: the session continues offline.");
                 _beat.Interval = RetryInterval;
                 OnlineChanged?.Invoke(false);
             }
@@ -207,6 +210,7 @@ namespace VANAS.Client.Services
         private void GoOnline()
         {
             if (_offlineSince == null) return;
+            AppLog.Info("Server reachable again.");
             _offlineSince = null;
             _beat.Interval = HeartbeatInterval;
             OnlineChanged?.Invoke(true);
@@ -215,6 +219,7 @@ namespace VANAS.Client.Services
         private void Finish(SessionEndedReason reason)
         {
             if (!_running) return;
+            AppLog.Info($"Session ended: {reason}.");
             Halt();
             Ended?.Invoke(reason);
         }

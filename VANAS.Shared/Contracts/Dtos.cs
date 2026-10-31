@@ -189,3 +189,9 @@ namespace VANAS.Shared.Contracts
 
     public record SaveCafeInfoRequest(string OpeningHours, string Address, string Phone, string Email, string AboutMarkdown, string PhotoUrls);
 }
+
+namespace VANAS.Shared.Contracts
+{
+    /// <summary>The newest PC client build the server can hand out.</summary>
+    public record ClientVersionInfo(string Version, string Sha256, long SizeBytes);
+}
