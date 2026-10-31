@@ -81,7 +81,7 @@
                             <br /><span class="chip chip-off">ACCORD PARENTAL À VALIDER</span>
                             <button class="btn small" @onclick="() => RecordConsentAsync(u)">@(_confirmConsent == u.Id ? "Confirmer : un parent est présent" : "Accord reçu")</button>
                         }
-                        else if (u.Age is < 18)
+                        else if (u.ConsentRecorded)
                         {
                             <br /><span class="muted">accord parental enregistré</span>
                         }

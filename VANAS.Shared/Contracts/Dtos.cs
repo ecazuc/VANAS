@@ -15,7 +15,7 @@ namespace VANAS.Shared.Contracts
 
     public record SetRoleRequest(UserRole Role);
 
-    public record UserSummary(int Id, string Username, UserRole Role, double MinutesLeft, bool IsOnline, int? Age = null, bool ConsentPending = false);
+    public record UserSummary(int Id, string Username, UserRole Role, double MinutesLeft, bool IsOnline, int? Age = null, bool ConsentPending = false, bool ConsentRecorded = false);
 
     public record StartSessionRequest(string StationName);
 

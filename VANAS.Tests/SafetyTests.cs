@@ -130,14 +130,25 @@ public class SafetyTests : IClassFixture<VanasFactory>
     }
 
     [Fact]
-    public async Task Adults_need_no_agreement()
+    public async Task Players_aged_15_or_more_need_no_agreement()
     {
-        var adult = await NewPlayerAsync("safe_adult", YearsAgo(18));   // turned 18 today
-        Assert.False((await adult.Client.GetFromJsonAsync<LoginResponse>("/api/auth/me", Json))!.ConsentPending);
-        (await adult.Client.PostAsJsonAsync("/api/sessions/start", new StartSessionRequest("PC-ADULT"), Json)).EnsureSuccessStatusCode();
+        var staff = await NewStaffAsync("safe_staff5");
+        var fifteen = await NewPlayerAsync("safe_fifteen", YearsAgo(15));   // turned 15 today
+        Assert.False((await fifteen.Client.GetFromJsonAsync<LoginResponse>("/api/auth/me", Json))!.ConsentPending);
+        (await fifteen.Client.PostAsJsonAsync("/api/sessions/start", new StartSessionRequest("PC-15"), Json)).EnsureSuccessStatusCode();
 
-        var almost = await NewPlayerAsync("safe_almost", YearsAgo(18).AddDays(1));   // turns 18 tomorrow
+        var seventeen = await NewPlayerAsync("safe_seventeen", YearsAgo(17));
+        Assert.False((await seventeen.Client.GetFromJsonAsync<LoginResponse>("/api/auth/me", Json))!.ConsentPending);
+
+        var almost = await NewPlayerAsync("safe_almost", YearsAgo(15).AddDays(1));   // turns 15 tomorrow
         Assert.True((await almost.Client.GetFromJsonAsync<LoginResponse>("/api/auth/me", Json))!.ConsentPending);
+
+        // The staff list shows a recorded agreement only where staff recorded one, not for players who never needed it.
+        var list = (await staff.Client.GetFromJsonAsync<List<UserSummary>>("/api/users", Json))!;
+        Assert.False(list.Single(u => u.Id == seventeen.Id).ConsentRecorded);
+        Assert.False(list.Single(u => u.Id == almost.Id).ConsentRecorded);
+        (await staff.Client.PostAsync($"/api/users/{almost.Id}/parental-consent", null)).EnsureSuccessStatusCode();
+        Assert.True((await staff.Client.GetFromJsonAsync<List<UserSummary>>("/api/users", Json))!.Single(u => u.Id == almost.Id).ConsentRecorded);
     }
 
     [Fact]
@@ -159,7 +170,7 @@ public class SafetyTests : IClassFixture<VanasFactory>
     public async Task Minors_with_an_agreement_and_adults_can_write_to_each_other()
     {
         var staff = await NewStaffAsync("safe_staff3");
-        var kid = await NewPlayerAsync("safe_kid3", YearsAgo(15));
+        var kid = await NewPlayerAsync("safe_kid3", YearsAgo(14));
         var adult = await NewPlayerAsync("safe_adult3", YearsAgo(30));
         (await staff.Client.PostAsync($"/api/users/{kid.Id}/parental-consent", null)).EnsureSuccessStatusCode();
         var game = await NewGameAsync("Jeu âges");

@@ -2,8 +2,11 @@ namespace VANAS.Shared.Contracts
 {
     public static class AgeRules
     {
-        /// <summary>Age of majority: the default age below which a parent's agreement is required.</summary>
-        public const int AdultAge = 18;
+        /// <summary>
+        /// Default age below which a parent's agreement is required (15: the age of digital consent in France).
+        /// The café can change it with the Age:ParentalConsentBelow setting.
+        /// </summary>
+        public const int DefaultConsentAge = 15;
 
         public static int AgeOn(DateOnly birth, DateOnly today)
         {
@@ -11,6 +14,5 @@ namespace VANAS.Shared.Contracts
             if (today < birth.AddYears(age)) age--;
             return age;
         }
-
     }
 }

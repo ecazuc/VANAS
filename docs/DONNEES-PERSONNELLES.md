@@ -22,8 +22,9 @@ La suppression d'un compte (console staff) supprime ses messages, blocages, sign
 ## Règle d'âge
 
 - Moins de 12 ans : inscription refusée.
-- De 12 à 17 ans : le compte est créé, mais le joueur ne peut ni jouer, ni utiliser la messagerie, ni s'inscrire à un événement tant qu'un membre du staff n'a pas enregistré l'accord d'un parent ou responsable légal **au comptoir**. Le staff peut retirer cet accord ; le joueur est alors déconnecté.
-- Seuil réglable : `Age:ParentalConsentBelow` (18 par défaut ; la loi française fixe à 15 ans l'âge du consentement numérique seul).
+- De 12 à 14 ans : le compte est créé, mais le joueur ne peut ni jouer, ni utiliser la messagerie, ni s'inscrire à un événement tant qu'un membre du staff n'a pas enregistré l'accord d'un parent ou responsable légal **au comptoir**. Le staff peut retirer cet accord ; le joueur est alors déconnecté.
+- À partir de 15 ans : aucun accord requis (la loi française fixe à 15 ans l'âge du consentement numérique seul). Le joueur reste mineur jusqu'à 18 ans, avec les mêmes règles de messagerie que tout le monde.
+- Seuil réglable : `Age:ParentalConsentBelow` (15 par défaut). Le mettre à 18 impose l'accord parental à tous les mineurs.
 - Les comptes sans date de naissance (compte administrateur, comptes de test) sont traités comme des adultes.
 
 ## Messagerie : protections

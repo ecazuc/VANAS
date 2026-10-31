@@ -43,7 +43,7 @@ namespace VANAS.Server.Controllers
 
             var result = new List<UserSummary>();
             foreach (var u in users)
-                result.Add(new UserSummary(u.Id, u.Username, u.Role, await _balance.GetMinutesAsync(u.Id), online.Contains(u.Id), _age.AgeOf(u), _age.ConsentPending(u)));
+                result.Add(new UserSummary(u.Id, u.Username, u.Role, await _balance.GetMinutesAsync(u.Id), online.Contains(u.Id), _age.AgeOf(u), _age.ConsentPending(u), u.ParentalConsentAt != null));
             return Ok(result);
         }
 

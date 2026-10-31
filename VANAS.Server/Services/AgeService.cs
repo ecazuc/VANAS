@@ -5,7 +5,7 @@ namespace VANAS.Server.Services
 {
     /// <summary>
     /// The café's age rules. Both limits are configurable: Age:MinimumAge (default 12) and
-    /// Age:ParentalConsentBelow (default 18: every minor needs a parent's agreement, recorded once at the counter).
+    /// Age:ParentalConsentBelow (default 15: below it a parent's agreement is needed, recorded once at the counter).
     /// </summary>
     public class AgeService
     {
@@ -18,7 +18,7 @@ namespace VANAS.Server.Services
         public AgeService(IConfiguration config)
         {
             MinimumAge = config.GetValue("Age:MinimumAge", 12);
-            ConsentBelow = config.GetValue("Age:ParentalConsentBelow", AgeRules.AdultAge);
+            ConsentBelow = config.GetValue("Age:ParentalConsentBelow", AgeRules.DefaultConsentAge);
         }
 
         public static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
