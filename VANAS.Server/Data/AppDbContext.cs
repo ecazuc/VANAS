@@ -16,6 +16,11 @@ namespace VANAS.Server.Data
         public DbSet<CatalogGame> Games => Set<CatalogGame>();
         public DbSet<Article> Articles => Set<Article>();
         public DbSet<GameEvent> Events => Set<GameEvent>();
+        public DbSet<PlayerGame> PlayerGames => Set<PlayerGame>();
+        public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+        public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
+        public DbSet<MessageReport> MessageReports => Set<MessageReport>();
+        public DbSet<ChatSanction> ChatSanctions => Set<ChatSanction>();
         public DbSet<Offer> Offers => Set<Offer>();
         public DbSet<Sale> Sales => Set<Sale>();
         public DbSet<Subscription> Subscriptions => Set<Subscription>();
@@ -33,6 +38,13 @@ namespace VANAS.Server.Data
             b.Entity<Article>().HasIndex(a => a.Slug).IsUnique();
             b.Entity<Article>().HasIndex(a => new { a.IsPublished, a.PublishedAt });
             b.Entity<GameEvent>().HasIndex(e => e.StartsAt);
+            b.Entity<PlayerGame>().HasKey(p => new { p.UserId, p.GameId });
+            b.Entity<UserBlock>().HasKey(x => new { x.BlockerId, x.BlockedId });
+            b.Entity<ChatSanction>().HasKey(x => x.UserId);
+            b.Entity<ChatMessage>().HasIndex(m => new { m.GameId, m.Id });
+            b.Entity<ChatMessage>().HasIndex(m => new { m.SenderId, m.CreatedAt });
+            b.Entity<ChatMessage>().HasIndex(m => new { m.RecipientId, m.SenderId });
+            b.Entity<MessageReport>().HasIndex(r => new { r.MessageId, r.ReporterId }).IsUnique();
             b.Entity<Sale>().HasIndex(s => s.CreatedAt);
             b.Entity<Subscription>().HasIndex(s => new { s.UserId, s.EndsAt });
             b.Entity<PassUsage>().HasIndex(u => new { u.SubscriptionId, u.At });

@@ -34,7 +34,7 @@ builder.Services
             OnMessageReceived = context =>
             {
                 var token = context.Request.Query["access_token"];
-                if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments(SessionHub.Path))
+                if (!string.IsNullOrEmpty(token) && (context.HttpContext.Request.Path.StartsWithSegments(SessionHub.Path) || context.HttpContext.Request.Path.StartsWithSegments(ChatHub.Path)))
                     context.Token = token;
                 return Task.CompletedTask;
             }
@@ -73,6 +73,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<SessionHub>(SessionHub.Path);
+app.MapHub<ChatHub>(ChatHub.Path);
 
 using (var scope = app.Services.CreateScope())
 {

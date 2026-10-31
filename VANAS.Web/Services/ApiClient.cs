@@ -122,6 +122,20 @@ namespace VANAS.Web.Services
         public Task<ApiResult<CheckInResult>> CheckInAsync(string ticketCode) =>
             SendAsync<CheckInResult>(HttpMethod.Post, "api/events/check-in", new CheckInRequest(ticketCode));
 
+        // ----- Chat moderation -----
+
+        public Task<ApiResult<List<ReportDto>>> GetReportsAsync() =>
+            SendAsync<List<ReportDto>>(HttpMethod.Get, "api/chat/moderation/reports");
+
+        public Task<ApiResult> ResolveReportAsync(int reportId, ModerationAction action) =>
+            SendAsync(HttpMethod.Post, $"api/chat/moderation/reports/{reportId}/resolve", new ModerateRequest(action));
+
+        public Task<ApiResult<List<SanctionDto>>> GetSanctionsAsync() =>
+            SendAsync<List<SanctionDto>>(HttpMethod.Get, "api/chat/moderation/sanctions");
+
+        public Task<ApiResult> LiftSanctionAsync(int userId) =>
+            SendAsync(HttpMethod.Delete, $"api/chat/moderation/sanctions/{userId}");
+
         // ----- Offers and sales -----
 
         public Task<ApiResult<List<OfferDto>>> GetOffersAsync() =>

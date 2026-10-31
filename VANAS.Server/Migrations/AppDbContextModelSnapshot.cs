@@ -106,6 +106,65 @@ namespace VANAS.Server.Migrations
                     b.ToTable("Games");
                 });
 
+            modelBuilder.Entity("VANAS.Shared.Models.ChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("GameId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RecipientId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId", "Id");
+
+                    b.HasIndex("RecipientId", "SenderId");
+
+                    b.HasIndex("SenderId", "CreatedAt");
+
+                    b.ToTable("ChatMessages");
+                });
+
+            modelBuilder.Entity("VANAS.Shared.Models.ChatSanction", b =>
+                {
+                    b.Property<int>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsBanned")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("MutedUntil")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("ChatSanctions");
+                });
+
             modelBuilder.Entity("VANAS.Shared.Models.EventRegistration", b =>
                 {
                     b.Property<int>("Id")
@@ -220,6 +279,39 @@ namespace VANAS.Server.Migrations
                     b.ToTable("Sessions");
                 });
 
+            modelBuilder.Entity("VANAS.Shared.Models.MessageReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MessageId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ReporterId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId", "ReporterId")
+                        .IsUnique();
+
+                    b.ToTable("MessageReports");
+                });
+
             modelBuilder.Entity("VANAS.Shared.Models.Offer", b =>
                 {
                     b.Property<int>("Id")
@@ -282,6 +374,19 @@ namespace VANAS.Server.Migrations
                     b.ToTable("PassUsage");
                 });
 
+            modelBuilder.Entity("VANAS.Shared.Models.PlayerGame", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("UserId", "GameId");
+
+                    b.ToTable("PlayerGames");
+                });
+
             modelBuilder.Entity("VANAS.Shared.Models.Profile", b =>
                 {
                     b.Property<int>("UserId")
@@ -289,6 +394,9 @@ namespace VANAS.Server.Migrations
 
                     b.Property<string>("AvatarKey")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ChatRulesAcceptedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DisplayName")
@@ -472,6 +580,19 @@ namespace VANAS.Server.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("VANAS.Shared.Models.UserBlock", b =>
+                {
+                    b.Property<int>("BlockerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BlockedId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("BlockerId", "BlockedId");
+
+                    b.ToTable("UserBlocks");
                 });
 
             modelBuilder.Entity("VANAS.Shared.Models.EventRegistration", b =>

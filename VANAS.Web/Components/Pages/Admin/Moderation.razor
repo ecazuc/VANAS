@@ -1,0 +1,114 @@
+@page "/admin/moderation"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+
+<PageTitle>Modération - VANAS staff</PageTitle>
+
+<AdminShell Title="Modération de la messagerie">
+    <AutoRefresh OnTick="LoadAsync" Seconds="10" />
+
+    @if (_message != null)
+    {
+        <p class="msg @(_messageIsError ? "error" : "ok")">@_message</p>
+    }
+
+    <h2>Signalements à traiter (@_reports.Count)</h2>
+    @if (_reports.Count == 0)
+    {
+        <p class="muted">Aucun signalement en attente.</p>
+    }
+
+    @foreach (var r in _reports)
+    {
+        <div class="card">
+            <p class="eyebrow">@r.Context · signalé @r.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm") par @r.ReporterName</p>
+            <p><strong>@r.SenderName</strong> : « @r.MessageText »</p>
+            <p class="muted">Motif : @r.Reason</p>
+            <div class="actions">
+                <button class="btn small" @onclick="() => ResolveAsync(r, ModerationAction.HideMessage)">Masquer le message</button>
+                <button class="btn small" @onclick="() => ResolveAsync(r, ModerationAction.Mute24Hours)">Silence 24 h</button>
+                <button class="btn small" @onclick="() => ResolveAsync(r, ModerationAction.Mute7Days)">Silence 7 jours</button>
+                <button class="btn small danger" @onclick="() => ResolveAsync(r, ModerationAction.Ban)">Bannir de la messagerie</button>
+                <button class="btn small" @onclick="() => ResolveAsync(r, ModerationAction.Dismiss)">Classer sans suite</button>
+            </div>
+        </div>
+    }
+
+    <h2>Joueurs sanctionnés</h2>
+    @if (_sanctions.Count == 0)
+    {
+        <p class="muted">Aucun joueur sanctionné.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead><tr><th>Joueur</th><th>Sanction</th><th>Motif</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var s in _sanctions)
+                {
+                    <tr>
+                        <td><strong>@s.DisplayName</strong></td>
+                        <td>@(s.IsBanned ? "Banni" : $"Silence jusqu'au {s.MutedUntil?.ToLocalTime():dd/MM/yyyy HH:mm}")</td>
+                        <td class="muted">@s.Reason</td>
+                        <td class="actions"><button class="btn small" @onclick="() => LiftAsync(s)">Lever la sanction</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</AdminShell>
+
+@code {
+    private List<ReportDto> _reports = new();
+    private List<SanctionDto> _sanctions = new();
+    private string? _message;
+    private bool _messageIsError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Auth.Token == null) return;
+        var reports = await Api.GetReportsAsync();
+        if (reports.Ok && reports.Value != null) _reports = reports.Value;
+        else Report(reports.Error, true);
+
+        var sanctions = await Api.GetSanctionsAsync();
+        if (sanctions.Ok && sanctions.Value != null) _sanctions = sanctions.Value;
+    }
+
+    private void Report(string? text, bool isError)
+    {
+        _message = text;
+        _messageIsError = isError;
+    }
+
+    private async Task ResolveAsync(ReportDto report, ModerationAction action)
+    {
+        var result = await Api.ResolveReportAsync(report.Id, action);
+        Report(result.Ok ? $"Signalement traité ({Label(action)})." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+
+    private async Task LiftAsync(SanctionDto s)
+    {
+        var result = await Api.LiftSanctionAsync(s.UserId);
+        Report(result.Ok ? $"Sanction levée pour {s.DisplayName}." : result.Error, !result.Ok);
+        await LoadAsync();
+    }
+
+    private static string Label(ModerationAction a) => a switch
+    {
+        ModerationAction.HideMessage => "message masqué",
+        ModerationAction.Mute24Hours => "silence 24 h",
+        ModerationAction.Mute7Days => "silence 7 jours",
+        ModerationAction.Ban => "joueur banni",
+        _ => "classé sans suite"
+    };
+}

@@ -138,3 +138,31 @@ namespace VANAS.Shared.Contracts
     public record SubscriptionInfo(
         int Id, string Name, VANAS.Shared.Models.OfferKind Kind, DateTime StartsAt, DateTime EndsAt, bool IsActive, double? MinutesLeft);
 }
+
+namespace VANAS.Shared.Contracts
+{
+    public record ChatStatus(bool RulesAccepted, bool IsBanned, DateTime? MutedUntil);
+
+    public record SetGamesRequest(List<int> GameIds);
+
+    public record PlayerSuggestion(int UserId, string DisplayName, string AvatarKey, List<string> SharedGames);
+
+    public record ChatMessageDto(
+        int Id, int? GameId, int SenderId, string SenderName, string AvatarKey, int? RecipientId, string Text, DateTime CreatedAt);
+
+    public record SendMessageRequest(string Text);
+
+    public record ConversationDto(int UserId, string DisplayName, string AvatarKey, string LastText, DateTime LastAt);
+
+    public record BlockedPlayer(int UserId, string DisplayName);
+
+    public record ReportRequest(string Reason);
+
+    public record ReportDto(
+        int Id, DateTime CreatedAt, int MessageId, string MessageText, bool MessageHidden, int SenderId, string SenderName,
+        string ReporterName, string Reason, string Context);
+
+    public record ModerateRequest(VANAS.Shared.Models.ModerationAction Action);
+
+    public record SanctionDto(int UserId, string DisplayName, DateTime? MutedUntil, bool IsBanned, string? Reason);
+}
