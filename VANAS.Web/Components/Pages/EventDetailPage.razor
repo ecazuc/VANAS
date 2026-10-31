@@ -1,0 +1,52 @@
+@page "/evenements/{Id:int}"
+@inject ApiClient Api
+
+<PageTitle>@(_event?.Title ?? "Événement") - VANAS</PageTitle>
+
+<section class="container page article">
+    <p><a href="/evenements">&larr; Tous les événements</a></p>
+
+    @if (_missing)
+    {
+        <h1>Événement introuvable</h1>
+        <p class="muted">Cet événement n'existe pas ou n'est plus annoncé.</p>
+    }
+    else if (_event != null)
+    {
+        var left = _event.Capacity - _event.RegisteredCount;
+        <p class="eyebrow">@_event.StartsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") @(string.IsNullOrEmpty(_event.GameName) ? "" : "· " + _event.GameName)</p>
+        <h1>@_event.Title</h1>
+        <p>
+            <span class="chip @(left > 0 ? "chip-on" : "chip-off")">@(left > 0 ? $"{left} place(s) restante(s) sur {_event.Capacity}" : "COMPLET")</span>
+            <span class="muted">@(_event.PriceCents == 0 ? "Gratuit" : $"{_event.PriceCents / 100m:0.00} €")</span>
+        </p>
+        <div class="prose">@((MarkupString)_html)</div>
+        <p class="card">Pour réserver votre place, utilisez l'application mobile VANAS (billet avec QR code) ou passez au comptoir.</p>
+    }
+    else
+    {
+        <p class="msg error">L'événement est momentanément indisponible.</p>
+    }
+</section>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private EventDetail? _event;
+    private string _html = string.Empty;
+    private bool _missing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Api.GetEventAsync(Id);
+        if (result.Ok && result.Value != null)
+        {
+            _event = result.Value;
+            _html = MarkdownRenderer.ToHtml(_event.DescriptionMarkdown);
+        }
+        else if (result.Error?.Contains("introuvable", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            _missing = true;
+        }
+    }
+}

@@ -64,5 +64,16 @@ Voir `kiosk/README.md`. Ne PAS tester sur votre session de travail.
 - [ ] Blog : coller `<script>alert(1)</script>` et `[x](javascript:alert(1))` dans le contenu : aucun script ne s'exécute sur la page publique.
 - [ ] `/rss.xml` liste les articles publiés.
 
+## F. Événements (W-3)
+Un événement de démonstration (« Tournoi Rocket League ») existe dans la base de développement.
+- [ ] Console staff, page Événements : créer un événement (brouillon) : absent de `/evenements` ; le publier : il apparaît.
+- [ ] `/evenements` et la page de détail : date, jeu, tarif, places restantes, description Markdown.
+- [ ] Swagger, connecté en `joueur1` : `POST /api/events/{id}/register` renvoie un billet (code de 10 caractères) ; une 2e fois : « déjà inscrit ».
+- [ ] La page publique et la console affichent une place de moins ; le bouton « Inscrits » liste le joueur et son billet.
+- [ ] Événement à 1 place : un 2e joueur est refusé (« Complet »).
+- [ ] Console, « Contrôle d'entrée » : saisir le code du billet valide l'entrée (nom du joueur affiché) ; une 2e saisie : « Billet déjà utilisé ».
+- [ ] Réduire la capacité sous le nombre d'inscrits : refusé.
+- [ ] Supprimer l'événement : disparaît du site et de la console.
+
 ## Ce qui n'est PAS encore fait
-Événements et QR code (W-3, M-3), comptes clients sur le site (W-4), messagerie (M-4), application mobile (M-1 à M-5), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, tarifs et forfaits, paiement.
+Inscription aux événements depuis le site (W-4, il faut d'abord les comptes clients sur le web), QR code et application mobile (M-1 à M-5), comptes clients sur le site (W-4), messagerie (M-4), application mobile (M-1 à M-5), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, tarifs et forfaits, paiement.

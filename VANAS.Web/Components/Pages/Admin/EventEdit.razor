@@ -1,0 +1,116 @@
+@page "/admin/evenements/nouveau"
+@page "/admin/evenements/{Id:int}"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Éditeur d'événement - VANAS staff</PageTitle>
+
+<AdminShell Title="@(Id == null ? "Nouvel événement" : "Modifier l'événement")">
+    <p><a href="/admin/evenements">&larr; Retour à la liste</a></p>
+
+    @if (_message != null)
+    {
+        <p class="msg @(_messageIsError ? "error" : "ok")">@_message</p>
+    }
+
+    <div class="editor">
+        <div class="card">
+            <label>Titre</label>
+            <input @bind="_title" maxlength="120" />
+
+            <div class="row two">
+                <div>
+                    <label>Jeu</label>
+                    <input @bind="_game" maxlength="80" />
+                </div>
+                <div>
+                    <label>Date et heure</label>
+                    <input type="datetime-local" @bind="_startsAt" />
+                </div>
+            </div>
+
+            <div class="row two">
+                <div>
+                    <label>Places</label>
+                    <input type="number" min="1" max="1000" @bind="_capacity" />
+                </div>
+                <div>
+                    <label>Tarif en euros (0 = gratuit)</label>
+                    <input type="number" min="0" step="0.5" @bind="_price" />
+                </div>
+            </div>
+
+            <label>Description (Markdown)</label>
+            <textarea @bind="_description" @bind:event="oninput" rows="12"></textarea>
+
+            <label class="check">
+                <input type="checkbox" @bind="_published" /> Publier cet événement (visible sur le site et l'application)
+            </label>
+
+            <button class="btn" @onclick="SaveAsync" disabled="@_busy">@(_busy ? "Enregistrement..." : "Enregistrer")</button>
+        </div>
+
+        <div class="card">
+            <h3>Aperçu</h3>
+            <div class="prose">@((MarkupString)MarkdownRenderer.ToHtml(_description))</div>
+        </div>
+    </div>
+</AdminShell>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private string _title = string.Empty, _game = string.Empty, _description = string.Empty;
+    private DateTime _startsAt = DateTime.Today.AddDays(7).AddHours(18);
+    private int _capacity = 16;
+    private decimal _price;
+    private bool _published, _busy;
+    private string? _message;
+    private bool _messageIsError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        if (Id is not int id || Auth.Token == null) return;
+
+        var result = await Api.GetEventForEditAsync(id);
+        if (!result.Ok || result.Value == null)
+        {
+            _message = result.Error;
+            _messageIsError = true;
+            return;
+        }
+
+        var e = result.Value;
+        (_title, _game, _description, _startsAt, _capacity, _price, _published) =
+            (e.Title, e.GameName, e.DescriptionMarkdown, e.StartsAt.ToLocalTime(), e.Capacity, e.PriceCents / 100m, e.IsPublished);
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        var request = new SaveEventRequest(_title, _game, _description, DateTime.SpecifyKind(_startsAt, DateTimeKind.Local).ToUniversalTime(),
+            _capacity, (int)Math.Round(_price * 100), _published);
+        var result = await Api.SaveEventAsync(Id, request);
+        _busy = false;
+
+        if (!result.Ok || result.Value == null)
+        {
+            _message = result.Error;
+            _messageIsError = true;
+            return;
+        }
+
+        if (Id == null)
+        {
+            Navigation.NavigateTo($"/admin/evenements/{result.Value.Id}");
+            return;
+        }
+
+        _message = _published ? "Événement enregistré et publié." : "Brouillon enregistré.";
+        _messageIsError = false;
+    }
+}

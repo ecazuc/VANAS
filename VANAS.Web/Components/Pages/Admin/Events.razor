@@ -1,0 +1,145 @@
+@page "/admin/evenements"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+
+<PageTitle>Événements - VANAS staff</PageTitle>
+
+<AdminShell Title="Événements">
+    <p><a class="btn" href="/admin/evenements/nouveau">Nouvel événement</a></p>
+
+    <div class="card">
+        <h3>Contrôle d'entrée</h3>
+        <p class="muted">Saisissez le code du billet (affiché sous le QR code du joueur).</p>
+        <input @bind="_ticketCode" @bind:event="oninput" @onkeydown="OnCheckInKey" maxlength="10" placeholder="CODE DU BILLET" />
+        <button class="btn" @onclick="CheckInAsync">Valider l'entrée</button>
+        @if (_checkInMessage != null)
+        {
+            <p class="msg @(_checkInOk ? "ok" : "error")">@_checkInMessage</p>
+        }
+    </div>
+
+    @if (_message != null)
+    {
+        <p class="msg error">@_message</p>
+    }
+
+    <table class="table">
+        <thead>
+            <tr><th>Événement</th><th>Date</th><th>Inscrits</th><th>Statut</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var e in _events)
+            {
+                <tr>
+                    <td><strong>@e.Title</strong><br /><span class="muted">@e.GameName</span></td>
+                    <td>@e.StartsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@e.RegisteredCount / @e.Capacity</td>
+                    <td><span class="chip @(e.IsPublished ? "chip-on" : "chip-off")">@(e.IsPublished ? "PUBLIÉ" : "BROUILLON")</span></td>
+                    <td class="actions">
+                        <a class="btn small" href="/admin/evenements/@e.Id">Modifier</a>
+                        <button class="btn small" @onclick="() => ToggleRegistrationsAsync(e.Id)">Inscrits</button>
+                        <button class="btn small danger" @onclick="() => DeleteAsync(e)">
+                            @(_confirmDelete == e.Id ? "Confirmer ?" : "Supprimer")
+                        </button>
+                    </td>
+                </tr>
+                @if (_openRegistrations == e.Id)
+                {
+                    <tr>
+                        <td colspan="5">
+                            @if (_registrations.Count == 0)
+                            {
+                                <span class="muted">Aucun inscrit.</span>
+                            }
+                            else
+                            {
+                                <table class="table">
+                                    <thead><tr><th>Joueur</th><th>Billet</th><th>Inscrit le</th><th>Entrée</th></tr></thead>
+                                    <tbody>
+                                        @foreach (var r in _registrations)
+                                        {
+                                            <tr>
+                                                <td>@r.DisplayName <span class="muted">(@r.Username)</span></td>
+                                                <td><code>@r.TicketCode</code></td>
+                                                <td class="muted">@r.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                                                <td>@(r.CheckedInAt is DateTime c ? "✔ " + c.ToLocalTime().ToString("HH:mm") : "-")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    @if (_events.Count == 0)
+    {
+        <p class="muted">Aucun événement.</p>
+    }
+</AdminShell>
+
+@code {
+    private List<EventSummary> _events = new();
+    private List<RegistrationInfo> _registrations = new();
+    private int? _openRegistrations, _confirmDelete;
+    private string _ticketCode = string.Empty;
+    private string? _message, _checkInMessage;
+    private bool _checkInOk;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Auth.Token == null) return;
+        var result = await Api.GetManagedEventsAsync();
+        if (result.Ok && result.Value != null) _events = result.Value;
+        else _message = result.Error;
+    }
+
+    private async Task ToggleRegistrationsAsync(int id)
+    {
+        if (_openRegistrations == id) { _openRegistrations = null; return; }
+        var result = await Api.GetRegistrationsAsync(id);
+        _registrations = result.Value ?? new();
+        _openRegistrations = id;
+        if (!result.Ok) _message = result.Error;
+    }
+
+    private async Task OnCheckInKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await CheckInAsync();
+    }
+
+    private async Task CheckInAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_ticketCode)) return;
+        var result = await Api.CheckInAsync(_ticketCode);
+        _checkInOk = result.Ok;
+        _checkInMessage = result.Ok && result.Value != null
+            ? $"Entrée validée : {result.Value.DisplayName} — {result.Value.EventTitle}"
+            : result.Error;
+        if (result.Ok)
+        {
+            _ticketCode = string.Empty;
+            await LoadAsync();
+            if (_openRegistrations is int open) _registrations = (await Api.GetRegistrationsAsync(open)).Value ?? new();
+        }
+    }
+
+    private async Task DeleteAsync(EventSummary e)
+    {
+        if (_confirmDelete != e.Id) { _confirmDelete = e.Id; return; }
+        _confirmDelete = null;
+        var result = await Api.DeleteEventAsync(e.Id);
+        _message = result.Ok ? null : result.Error;
+        await LoadAsync();
+    }
+}

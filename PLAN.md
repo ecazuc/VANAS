@@ -155,4 +155,5 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 | PC-4 — bibliothèque et lancement de jeux (catalogue serveur + console /admin/jeux, détection Steam/Epic/Riot) | Code terminé, à tester | `pc-4` |
 | PC-5 — installation de jeux (confirmation, progression Steam, espace disque, nettoyage des comptes launchers) | Code terminé, à tester | `pc-5` |
 | W-2 — blog d'actus (Markdown sécurisé, éditeur staff avec aperçu, RSS) | Code terminé, à tester | `w-2` |
-| W-3, W-4, W-5 / M-1 à M-5 / PC-7 | À faire | |
+| W-3 — événements (API, inscription + billet à code, contrôle d'entrée, pages publiques et staff) ; l'inscription depuis le site attend W-4 (compte client web) | Code terminé, à tester | `w-3` |
+| W-4, W-5 / M-1 à M-5 / PC-7 | À faire | |

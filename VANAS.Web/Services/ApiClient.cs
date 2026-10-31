@@ -94,6 +94,34 @@ namespace VANAS.Web.Services
         public Task<ApiResult> DeleteArticleAsync(int id) =>
             SendAsync(HttpMethod.Delete, $"api/articles/{id}");
 
+        // ----- Events -----
+
+        public Task<ApiResult<List<EventSummary>>> GetEventsAsync() =>
+            SendAsync<List<EventSummary>>(HttpMethod.Get, "api/events", authenticated: false);
+
+        public Task<ApiResult<EventDetail>> GetEventAsync(int id) =>
+            SendAsync<EventDetail>(HttpMethod.Get, $"api/events/{id}", authenticated: false);
+
+        public Task<ApiResult<List<EventSummary>>> GetManagedEventsAsync() =>
+            SendAsync<List<EventSummary>>(HttpMethod.Get, "api/events/manage");
+
+        public Task<ApiResult<EventDetail>> GetEventForEditAsync(int id) =>
+            SendAsync<EventDetail>(HttpMethod.Get, $"api/events/manage/{id}");
+
+        public Task<ApiResult<EventDetail>> SaveEventAsync(int? id, SaveEventRequest request) =>
+            id is int existing
+                ? SendAsync<EventDetail>(HttpMethod.Put, $"api/events/{existing}", request)
+                : SendAsync<EventDetail>(HttpMethod.Post, "api/events", request);
+
+        public Task<ApiResult> DeleteEventAsync(int id) =>
+            SendAsync(HttpMethod.Delete, $"api/events/{id}");
+
+        public Task<ApiResult<List<RegistrationInfo>>> GetRegistrationsAsync(int eventId) =>
+            SendAsync<List<RegistrationInfo>>(HttpMethod.Get, $"api/events/manage/{eventId}/registrations");
+
+        public Task<ApiResult<CheckInResult>> CheckInAsync(string ticketCode) =>
+            SendAsync<CheckInResult>(HttpMethod.Post, "api/events/check-in", new CheckInRequest(ticketCode));
+
         public Task<ApiResult> RegisterAsync(string username, string password) =>
             SendAsync(HttpMethod.Post, "api/auth/register", new RegisterRequest(username, password), authenticated: false);
 

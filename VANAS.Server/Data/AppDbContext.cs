@@ -15,6 +15,8 @@ namespace VANAS.Server.Data
         public DbSet<GameSession> Sessions => Set<GameSession>();
         public DbSet<CatalogGame> Games => Set<CatalogGame>();
         public DbSet<Article> Articles => Set<Article>();
+        public DbSet<GameEvent> Events => Set<GameEvent>();
+        public DbSet<EventRegistration> EventRegistrations => Set<EventRegistration>();
 
         protected override void OnModelCreating(ModelBuilder b)
         {
@@ -26,6 +28,11 @@ namespace VANAS.Server.Data
             b.Entity<Station>().HasIndex(s => s.Name).IsUnique();
             b.Entity<Article>().HasIndex(a => a.Slug).IsUnique();
             b.Entity<Article>().HasIndex(a => new { a.IsPublished, a.PublishedAt });
+            b.Entity<GameEvent>().HasIndex(e => e.StartsAt);
+            b.Entity<EventRegistration>().HasIndex(r => r.TicketCode).IsUnique();
+            b.Entity<EventRegistration>().HasIndex(r => new { r.EventId, r.UserId }).IsUnique();
+            b.Entity<EventRegistration>().HasOne<GameEvent>().WithMany().HasForeignKey(r => r.EventId).OnDelete(DeleteBehavior.Cascade);
+            b.Entity<EventRegistration>().HasOne<User>().WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Cascade);
             b.Entity<CatalogGame>().HasIndex(g => new { g.Launcher, g.ExternalId }).IsUnique();
             b.Entity<TimeLedgerEntry>().HasIndex(t => t.UserId);
             b.Entity<GameSession>().HasIndex(s => new { s.UserId, s.EndedAt });

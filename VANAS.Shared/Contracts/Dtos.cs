@@ -85,3 +85,22 @@ namespace VANAS.Shared.Contracts
 
     public record SaveArticleRequest(string Title, string Summary, string ContentMarkdown, string Category, string Tags, string? CoverUrl, bool IsPublished);
 }
+
+namespace VANAS.Shared.Contracts
+{
+    public record EventSummary(int Id, string Title, string GameName, DateTime StartsAt, int Capacity, int RegisteredCount, int PriceCents, bool IsPublished);
+
+    public record EventDetail(
+        int Id, string Title, string GameName, string DescriptionMarkdown, DateTime StartsAt,
+        int Capacity, int RegisteredCount, int PriceCents, bool IsPublished);
+
+    public record SaveEventRequest(string Title, string GameName, string DescriptionMarkdown, DateTime StartsAt, int Capacity, int PriceCents, bool IsPublished);
+
+    public record TicketInfo(int EventId, string EventTitle, DateTime StartsAt, string TicketCode, bool CheckedIn);
+
+    public record RegistrationInfo(string Username, string DisplayName, string TicketCode, DateTime CreatedAt, DateTime? CheckedInAt);
+
+    public record CheckInRequest(string TicketCode);
+
+    public record CheckInResult(string DisplayName, string EventTitle);
+}

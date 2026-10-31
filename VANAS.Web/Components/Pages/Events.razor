@@ -1,0 +1,47 @@
+@page "/evenements"
+@inject ApiClient Api
+
+<PageTitle>Événements - VANAS</PageTitle>
+
+<section class="container page">
+    <h1>Événements</h1>
+    <p class="lead">Tournois et soirées au café. Inscrivez-vous depuis l'application mobile VANAS ou au comptoir.</p>
+
+    @if (_error != null)
+    {
+        <p class="msg error">@_error</p>
+    }
+    else if (_events.Count == 0)
+    {
+        <p class="muted">Aucun événement prévu pour l'instant.</p>
+    }
+    else
+    {
+        <div class="features">
+            @foreach (var e in _events)
+            {
+                var left = e.Capacity - e.RegisteredCount;
+                <article class="card post-card">
+                    <p class="eyebrow">@e.StartsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") @(string.IsNullOrEmpty(e.GameName) ? "" : "· " + e.GameName)</p>
+                    <h3><a href="/evenements/@e.Id">@e.Title</a></h3>
+                    <p>
+                        <span class="chip @(left > 0 ? "chip-on" : "chip-off")">@(left > 0 ? $"{left} place(s) restante(s)" : "COMPLET")</span>
+                        <span class="muted">@(e.PriceCents == 0 ? "Gratuit" : $"{e.PriceCents / 100m:0.00} €")</span>
+                    </p>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private List<EventSummary> _events = new();
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Api.GetEventsAsync();
+        if (result.Ok && result.Value != null) _events = result.Value;
+        else _error = "Les événements sont momentanément indisponibles.";
+    }
+}
