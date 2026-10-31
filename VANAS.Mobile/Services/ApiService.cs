@@ -58,8 +58,14 @@ public class ApiService
         return v.Contains("://") ? v : "http://" + v;
     }
 
-    public static bool IsValidServer(string value) =>
-        Uri.TryCreate(NormalizeServer(value), UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https";
+    public static bool IsValidServer(string value)
+    {
+        if (!Uri.TryCreate(NormalizeServer(value), UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")) return false;
+
+        // "192.168.1.98.5049" (a dot instead of a colon) parses as a host name: refuse anything that looks like an IP address but is not one.
+        var host = uri.Host;
+        return !host.All(c => char.IsDigit(c) || c == '.') || System.Net.IPAddress.TryParse(host, out _);
+    }
 
     /// <summary>Loads a previously saved token and checks the server still accepts it.</summary>
     public async Task<bool> TryRestoreAsync()
