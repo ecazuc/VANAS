@@ -112,6 +112,8 @@ Chaque étape ci-dessous se termine par **« À tester »** (checklist que vous 
 
 Le MVP d'ouverture = Étape 0 + PC-1 à PC-4 + PC-6 + W-1. Le reste peut sortir après l'ouverture.
 
+Mise à jour : W-5 et M-5 passent après toutes les fonctionnalités et la refonte du design (voir « Ordre à suivre à partir d'ici » en fin de document).
+
 ## Points de vigilance (à décider en cours de route)
 
 - **Paiement/forfaits** : encaissement en caisse (staff ajoute du temps) au départ ; paiement en ligne (Stripe) plus tard.
@@ -159,8 +161,74 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 | W-4 — comptes clients sur le site (connexion, création de compte, Mon compte, inscription aux événements depuis la page de l'événement) | Code terminé, à tester | `w-4` |
 | M-1 — application mobile : socle MAUI, connexion/création de compte, jeton sécurisé, accueil avec le temps restant (testé en version Windows ; Android à tester sur téléphone) | Code terminé, à tester | `m-1` |
 | M-2 — temps restant en direct sur le mobile (décompte, EN JEU/HORS SESSION, mise à jour immédiate via SignalR, alertes 10/5/1 min dans l'app, historique) ; notification poussée app fermée = M-5 (Firebase) | Code terminé, à tester | `m-2` |
-| M-3 — événements sur mobile, inscription, billet avec QR code, scanner staff (caméra Android + saisie manuelle) ; code caméra Android non compilé faute d'Android SDK | Code terminé, à tester | `m-3` |
+| M-3 — événements sur mobile, inscription, billet avec QR code, scanner staff (caméra Android + saisie manuelle) ; le code de la caméra compile pour Android mais n'a jamais été essayé sur un téléphone | Code terminé, à tester | `m-3` |
 | Tarifs — formules (heures, forfait illimité avec plafond par jour, forfait d'heures), vente au comptoir, caisse du jour, grille publique ; heures sans expiration | Code terminé, à tester | `tarifs` |
 | M-4 - messagerie : jeux joués, salons par jeu, messages privés, blocage, signalement, modération staff (masquer, silence, bannissement), filtre liens/téléphones/spam, limite de vitesse, temps réel | Code terminé, à tester | `m-4` |
-| Âge minimum 12 ans, accord parental au comptoir (mineurs), coupure de la diffusion des salons, purge automatique des messages (90 jours), document de données personnelles | Code terminé, à tester | `age-conservation` |
-| W-5 / M-5 / PC-7 | À faire | |
+| Âge minimum 12 ans, accord parental au comptoir (avant 15 ans), coupure de la diffusion des salons, purge automatique des messages (90 jours), document de données personnelles | Code terminé, à tester | `age-conservation` |
+| PC-7 — installateur du client PC | À faire | |
+| W-5 — mise en ligne du site | Mise de côté jusqu'après la refonte du design | |
+| M-5 — publication de l'application mobile | Mise de côté jusqu'après la refonte du design | |
+
+## Ordre à suivre à partir d'ici
+
+1. **Valider ce qui est codé** : test du mode kiosque en VM (PC-2), puis les checklists de `docs/TESTS.md` (sections A à K) sur les PC et le Pixel.
+2. **Terminer les fonctionnalités** de la liste « Éléments laissés incomplets » ci-dessous, et PC-7 (installateur).
+3. **Refonte du design** des trois applications (client PC, site, mobile), avec le nom et le logo définitifs.
+4. **Seulement ensuite** : mise en ligne (W-5), publication de l'application (M-5), paiement en ligne.
+
+## Éléments laissés incomplets (à terminer avant la refonte du design)
+
+| Élément | Étape d'origine | État actuel |
+|---|---|---|
+| Message du staff envoyé à un poste | PC-6 | Non fait. |
+| Détection de Battle.net | PC-4 | Seuls Steam, Epic et Riot sont détectés. |
+| Encaissement des événements au comptoir | W-3 | Le prix s'affiche mais le paiement n'est pas enregistré dans la caisse. À préciser : le staff vend l'entrée comme une formule, ou la valide au contrôle d'entrée. |
+| Suppression de son compte par le joueur, export de ses données | RGPD | Non fait ; la suppression passe aujourd'hui par le staff. |
+| Annulation ou remboursement d'une vente | Tarifs | Non fait ; correction manuelle avec « + min » négatif. |
+| Vue calendrier des événements | W-3 | Liste seulement. |
+| Site vitrine : horaires, adresse, contact, plan d'accès, photos, configuration des PC | W-1 | Rubriques « à définir ». |
+| Message d'accord parental sur le site | Âge | « Mon compte » ne l'affiche qu'à la création du compte. |
+| Installateur du client PC | PC-7 | À faire : installation, configuration par fichier, mise à jour automatique, journaux. |
+
+### Codé mais jamais validé en conditions réelles
+
+- **Mode kiosque (PC-2)** : jamais testé en vrai (la VM de test était bloquée) ; `kiosk/Install-KioskUser.ps1` jamais lancé sur une machine réelle. C'est le risque principal avant l'ouverture.
+- **Scan du QR code par la caméra** : compile pour Android, jamais essayé sur le Pixel.
+- **Application Android sur le Pixel** : pas à jour (forfaits, messagerie, âge).
+- **Écrans d'inscription** (site, mobile, client PC) avec la date de naissance : compilés, pas vus à l'écran.
+
+## Mis de côté volontairement (après la refonte du design)
+
+| Élément | Étape | Pourquoi / remarque |
+|---|---|---|
+| Hébergement du site : serveur ou VPS, nom de domaine, HTTPS, déploiement automatique (GitHub Actions), sauvegardes en ligne | W-5 | Après les modifications de design. |
+| Migration SQLite vers PostgreSQL | Architecture cible | Utile seulement pour un hébergement en ligne. |
+| Mentions légales et politique de confidentialité du site | W-5 | Avec la mise en ligne. |
+| Mot de passe oublié (envoi d'e-mail) | W-5 | Demande un service d'envoi d'e-mails, donc la mise en ligne. |
+| Publication de l'application : Firebase, Google Play, icône et écran de démarrage définitifs | M-5 | Après la refonte du design. |
+| Notifications poussées (temps restant, nouveaux messages) application fermée | M-2, M-4 | Dépend de Firebase (M-5). Les alertes dans l'application ouverte existent déjà. |
+| Paiement en ligne (Stripe) | Points de vigilance | Tout se règle au comptoir, **événements compris**. |
+| iOS | M-5 | Il faut un Mac et un compte Apple. |
+| Nom et logo définitifs | Contexte | À intégrer pendant la refonte du design. |
+
+## Hors code (à votre charge avant l'ouverture du café)
+
+### Juridique et conformité
+- Faire relire `docs/DONNEES-PERSONNELLES.md` par un juriste (mineurs, durées de conservation, registre des traitements RGPD).
+- Rédiger le règlement intérieur et les conditions d'utilisation du café.
+- Valider la règle d'âge : minimum 12 ans, accord parental avant 15 ans, messages privés ouverts entre mineurs et adultes.
+- Préparer le formulaire papier d'accord parental (identité du parent, date, signature) et la procédure au comptoir.
+- Vérifier avec votre comptable la tenue des ventes (conservées 10 ans) et les obligations de caisse.
+
+### Éditeurs de jeux
+- Vérifier les conditions pour un cybercafé chez Steam (« Cafe Program »), Riot (« Internet Cafe Program ») et Epic, et ouvrir les comptes professionnels si nécessaire.
+
+### Postes et réseau du café
+- Durcir Windows sur les PC (compte standard, stratégies de groupe, mot de passe du BIOS, démarrage USB désactivé) et tester le mode kiosque sur un vrai poste.
+- Prévoir pour le PC serveur du café : IP fixe, onduleur, sauvegarde régulière **testée** de la base.
+
+### Contenu et exploitation
+- Saisir les vrais tarifs dans la console (les quatre formules actuelles sont des exemples), les horaires, l'adresse et les photos.
+- Rédiger les premiers articles de blog et planifier le premier événement.
+- Changer tous les secrets de développement avant l'ouverture (mot de passe administrateur, clé JWT).
+- Former le staff : console, vente et caisse, accord parental, modération, procédure en cas de panne du serveur.
