@@ -17,7 +17,7 @@ public partial class LoginPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        if (await _api.TryRestoreAsync()) await Shell.Current.GoToAsync("//home");
+        if (await _api.TryRestoreAsync()) await Shell.Current.GoToAsync("//main/home");
     }
 
     private void OnToggleMode(object? sender, EventArgs e)
@@ -84,7 +84,7 @@ public partial class LoginPage : ContentPage
             }
 
             PasswordEntry.Text = ConfirmEntry.Text = string.Empty;
-            await Shell.Current.GoToAsync("//home");
+            await Shell.Current.GoToAsync("//main/home");
         }
         finally
         {

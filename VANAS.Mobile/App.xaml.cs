@@ -1,11 +1,11 @@
-﻿namespace VANAS.Mobile;
+namespace VANAS.Mobile;
 
 public partial class App : Application
 {
-	public App()
+	public App(AppShell shell)
 	{
 		InitializeComponent();
 
-		MainPage = new AppShell();
+		MainPage = shell;
 	}
 }

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VANAS.Mobile.Pages.ScanPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#16181C">
+    <ScrollView>
+        <VerticalStackLayout Padding="24,48,24,24" Spacing="12" MaximumWidthRequest="460">
+            <Label Text="CONTRÔLE D'ENTRÉE" FontSize="28" FontAttributes="Bold" TextColor="#FCEE0A" />
+            <Label Text="Scannez le QR code du billet, ou saisissez son code." FontSize="12" TextColor="#7C828F" />
+
+            <Border x:Name="CameraHost" IsVisible="False" HeightRequest="300" Stroke="#FCEE0A" StrokeThickness="1" BackgroundColor="#23262D" />
+
+            <Border x:Name="ResultBox" IsVisible="False" Padding="16" StrokeThickness="1">
+                <Label x:Name="ResultLabel" FontSize="16" FontAttributes="Bold" />
+            </Border>
+
+            <Label Text="CODE DU BILLET" FontSize="11" TextColor="#7C828F" Margin="0,8,0,0" />
+            <Entry x:Name="CodeEntry" Placeholder="10 caractères" TextColor="#C8CCD4" PlaceholderColor="#7C828F"
+                   MaxLength="10" Keyboard="Plain" ReturnType="Done" Completed="OnManual" />
+            <Button Text="VALIDER L'ENTRÉE" BackgroundColor="#FCEE0A" TextColor="#16181C" FontAttributes="Bold" CornerRadius="0" Clicked="OnManual" />
+            <ActivityIndicator x:Name="Busy" IsRunning="False" IsVisible="False" Color="#FCEE0A" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

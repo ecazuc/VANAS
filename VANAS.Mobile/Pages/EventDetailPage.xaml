@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VANAS.Mobile.Pages.EventDetailPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#16181C">
+    <ScrollView>
+        <VerticalStackLayout Padding="24,36,24,24" Spacing="12" MaximumWidthRequest="460">
+            <Button Text="← RETOUR" BackgroundColor="Transparent" TextColor="#7C828F" HorizontalOptions="Start" Padding="0" Clicked="OnBack" />
+
+            <Label x:Name="WhenLabel" FontSize="12" TextColor="#7C828F" />
+            <Label x:Name="TitleLabel" FontSize="26" FontAttributes="Bold" TextColor="#FCEE0A" />
+            <Label x:Name="InfoLabel" FontSize="13" FontAttributes="Bold" TextColor="#C8CCD4" />
+            <Label x:Name="DescriptionLabel" TextType="Html" TextColor="#C8CCD4" FontSize="14" />
+
+            <Label x:Name="ErrorLabel" TextColor="#FF4D5E" IsVisible="False" />
+
+            <Border x:Name="TicketBox" IsVisible="False" BackgroundColor="#23262D" Stroke="#FCEE0A" StrokeThickness="1" Padding="18">
+                <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                    <Label x:Name="TicketHeader" Text="VOTRE BILLET" FontSize="11" TextColor="#7C828F" HorizontalOptions="Center" />
+                    <Image x:Name="QrImage" WidthRequest="240" HeightRequest="240" BackgroundColor="White" />
+                    <Label x:Name="CodeLabel" FontSize="22" FontAttributes="Bold" TextColor="#FCEE0A" HorizontalOptions="Center" />
+                    <Label Text="Présentez ce QR code à l'entrée." FontSize="12" TextColor="#7C828F" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button x:Name="ActionButton" BackgroundColor="#FCEE0A" TextColor="#16181C" FontAttributes="Bold" CornerRadius="0" Clicked="OnAction" IsVisible="False" />
+            <ActivityIndicator x:Name="Busy" IsRunning="False" IsVisible="False" Color="#FCEE0A" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

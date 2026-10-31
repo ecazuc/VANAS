@@ -14,7 +14,8 @@ Comptes de test (base de développement) :
 | `admin` | `Admin-Dev-123!` | Admin | console staff |
 | `joueur1` | `motdepassetest` | Client | beaucoup de temps, pseudo « Joueur Un » |
 | `alerteur` | `motdepassetest` | Client | environ 9 min : pour voir les alertes |
-| `testeur` | `motdepassetest` | Client | |
+| `testeur` | `motdepassetest` | Client | (mot de passe à rétablir si besoin) |
+| `staffeur` | `motdepassetest` | Staff | pour le scanner de l'application mobile |
 
 Pour recharger un compte : console staff, onglet Comptes, « + min ».
 
@@ -85,6 +86,18 @@ Un événement de démonstration (« Tournoi Rocket League ») existe dans la ba
 - [ ] Événement complet : message « complet », pas de bouton.
 - [ ] Après validation du billet à l'entrée (console staff), plus de bouton de désinscription.
 - [ ] Déconnexion depuis Mon compte, puis retour sur la page d'un événement : le bouton de connexion revient.
+
+## H. Application mobile (M-1 à M-3)
+Le serveur doit tourner. Version PC : voir `VANAS.Mobile/README.md`. Sur téléphone Android, indiquez d'abord l'adresse du serveur (Paramètres du serveur).
+- [ ] Connexion avec `alerteur` ; fermer et rouvrir l'application : elle reste connectée.
+- [ ] Mauvais mot de passe : message en français ; création d'un compte depuis le mobile, puis connexion avec ce compte sur le client PC.
+- [ ] Accueil : sur un PC du café, connectez-vous : le téléphone passe à « EN JEU » avec le nom du poste en moins de 15 s, et le décompte tourne.
+- [ ] Console staff : ajoutez 5 min au joueur en jeu : le téléphone est à jour en moins de 3 s ; kickez-le : « HORS SESSION » dès que le PC se verrouille.
+- [ ] Avec peu de temps (compte `alerteur`) : bandeau rouge à 10, 5 et 1 minute.
+- [ ] Événements : liste, détail (description, places, tarif), « Je m'inscris » : billet avec QR code et code à 10 caractères ; « Me désinscrire » le retire ; événement complet : pas de bouton.
+- [ ] Un joueur n'a pas l'onglet Scanner ; `staffeur` l'a.
+- [ ] Scanner (Android, caméra) : autoriser la caméra, scanner le QR code d'un autre téléphone : « ENTRÉE VALIDÉE » avec le nom du joueur ; un second scan : « déjà utilisé ». Saisie manuelle du code : même résultat.
+- [ ] La notification quand l'application est fermée n'existe pas encore (M-5).
 
 ## Ce qui n'est PAS encore fait
 QR code et application mobile (M-1 à M-5), mot de passe oublié et suppression de compte (W-5 / RGPD), messagerie (M-4), application mobile (M-1 à M-5), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, tarifs et forfaits, paiement.

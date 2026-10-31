@@ -39,6 +39,9 @@ public class ApiService
         set => Preferences.Set(ServerKey, NormalizeServer(value));
     }
 
+    /// <summary>Raised after a sign-in, a restored session or a sign-out (the shell shows or hides the staff tab).</summary>
+    public event Action? SessionChanged;
+
     public bool IsSignedIn => _token != null;
 
     /// <summary>Used by the live connection to the server (SignalR).</summary>
@@ -68,6 +71,7 @@ public class ApiService
         // A 401 clears the token inside RawAsync; an unreachable server keeps it for the next attempt.
         var me = await SendAsync<LoginResponse>(HttpMethod.Get, "api/auth/me");
         if (me.Ok && me.Value != null) Role = me.Value.Role;
+        SessionChanged?.Invoke();
         return me.Ok;
     }
 
@@ -80,6 +84,7 @@ public class ApiService
         Role = result.Value.Role;
         try { await SecureStorage.Default.SetAsync(TokenKey, _token); }
         catch (Exception) { /* secure storage can be unavailable (e.g. no lock screen): stay signed in for this run only */ }
+        SessionChanged?.Invoke();
         return new ApiResult((string?)null);
     }
 
@@ -121,6 +126,7 @@ public class ApiService
         _token = null;
         Role = UserRole.Client;
         SecureStorage.Default.Remove(TokenKey);
+        SessionChanged?.Invoke();
     }
 
     private static string? Translate(string? error) => error switch

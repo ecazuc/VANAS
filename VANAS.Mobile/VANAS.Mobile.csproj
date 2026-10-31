@@ -68,8 +68,13 @@
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.*" />
+		<PackageReference Include="QRCoder" Version="1.6.0" />
 	</ItemGroup>
 
+	<!-- Camera scanning is only wired on Android (the PC build uses manual code entry). -->
+	<ItemGroup Condition="$(TargetFramework.Contains('android'))">
+		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.4.0" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\VANAS.Shared\VANAS.Shared.csproj" />

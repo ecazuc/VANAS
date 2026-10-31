@@ -6,9 +6,17 @@
     xmlns:pages="clr-namespace:VANAS.Mobile.Pages"
     Shell.FlyoutBehavior="Disabled"
     Shell.BackgroundColor="#16181C"
+    Shell.TabBarBackgroundColor="#23262D"
+    Shell.TabBarTitleColor="#FCEE0A"
+    Shell.TabBarUnselectedColor="#7C828F"
     Title="VANAS">
 
     <ShellContent Route="login" ContentTemplate="{DataTemplate pages:LoginPage}" />
-    <ShellContent Route="home" ContentTemplate="{DataTemplate pages:HomePage}" />
+
+    <TabBar Route="main">
+        <ShellContent Title="Accueil" Route="home" ContentTemplate="{DataTemplate pages:HomePage}" />
+        <ShellContent Title="Événements" Route="events" ContentTemplate="{DataTemplate pages:EventsPage}" />
+        <ShellContent x:Name="ScanTab" Title="Scanner" Route="scan" IsVisible="False" ContentTemplate="{DataTemplate pages:ScanPage}" />
+    </TabBar>
 
 </Shell>
