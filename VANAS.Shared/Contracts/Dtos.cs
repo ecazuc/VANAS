@@ -134,7 +134,9 @@ namespace VANAS.Shared.Contracts
 
     public record SaleDto(
         int Id, DateTime CreatedAt, string UserName, string OfferName, VANAS.Shared.Models.OfferKind Kind, int PriceCents,
-        VANAS.Shared.Models.PaymentMethod Method, string SoldBy, string? Note);
+        VANAS.Shared.Models.PaymentMethod Method, string SoldBy, string? Note, bool Cancelled = false, string? CancelReason = null);
+
+    public record CancelSaleRequest(string Reason);
 
     public record SellResult(SaleDto Sale, double MinutesLeft);
 

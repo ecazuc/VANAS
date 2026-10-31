@@ -41,12 +41,12 @@
 
         <table class="table">
             <thead>
-                <tr><th>Heure</th><th>Joueur</th><th>Formule</th><th>Prix</th><th>Paiement</th><th>Encaissé par</th><th>Note</th></tr>
+                <tr><th>Heure</th><th>Joueur</th><th>Formule</th><th>Prix</th><th>Paiement</th><th>Encaissé par</th><th>Note</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var s in _report.Items)
                 {
-                    <tr>
+                    <tr style="@(s.Cancelled ? "opacity:.55;text-decoration:line-through" : "")">
                         <td class="muted">@s.CreatedAt.ToLocalTime().ToString("HH:mm")</td>
                         <td>@s.UserName</td>
                         <td>@s.OfferName</td>
@@ -54,6 +54,23 @@
                         <td>@OfferText.MethodLabel(s.Method)</td>
                         <td class="muted">@s.SoldBy</td>
                         <td class="muted">@s.Note</td>
+                        <td class="actions" style="text-decoration:none">
+                            @if (s.Cancelled)
+                            {
+                                <span class="chip chip-off">ANNULÉE</span>
+                                <span class="muted">@s.CancelReason</span>
+                            }
+                            else if (_cancelling == s.Id)
+                            {
+                                <input placeholder="Motif de l'annulation" maxlength="200" @bind="_cancelReason" @bind:event="oninput" />
+                                <button class="btn small danger" @onclick="() => CancelAsync(s)">Confirmer</button>
+                                <button class="btn small" @onclick="() => _cancelling = null">Retour</button>
+                            }
+                            else
+                            {
+                                <button class="btn small" @onclick="() => StartCancel(s)">Annuler la vente</button>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -82,6 +99,23 @@
         var result = await Api.GetSalesReportAsync(_day);
         if (result.Ok) { _report = result.Value; _message = null; }
         else _message = result.Error;
+    }
+
+    private int? _cancelling;
+    private string _cancelReason = string.Empty;
+
+    private void StartCancel(SaleDto sale)
+    {
+        _cancelling = sale.Id;
+        _cancelReason = string.Empty;
+    }
+
+    private async Task CancelAsync(SaleDto sale)
+    {
+        var result = await Api.CancelSaleAsync(sale.Id, _cancelReason);
+        _message = result.Ok ? null : result.Error;
+        if (result.Ok) _cancelling = null;
+        await LoadAsync();
     }
 
     private async Task ShiftAsync(int days)

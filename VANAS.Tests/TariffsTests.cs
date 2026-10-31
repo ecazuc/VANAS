@@ -257,6 +257,74 @@ public class TariffsTests : IClassFixture<VanasFactory>
         Assert.Equal(passes[0].EndsAt, passes[1].StartsAt);
         Assert.InRange((passes[1].EndsAt - passes[0].StartsAt).TotalDays, 13.99, 14.01);
     }
+
+    private static Task<HttpResponseMessage> CancelAsync(HttpClient staff, int saleId, string reason = "Erreur de caisse") =>
+        staff.PostAsJsonAsync($"/api/sales/{saleId}/cancel", new CancelSaleRequest(reason), Json);
+
+    [Fact]
+    public async Task Cancelling_an_hour_pack_takes_the_hours_back_and_leaves_the_totals()
+    {
+        var admin = await AdminAsync();
+        var staff = await StaffAsync("tar_staff8");
+        var (playerId, player) = await PlayerAsync("tar_player8");
+        var pack = await CreateOfferAsync(admin, "2 heures annulables", OfferKind.HourPack, 120, price: 700);
+
+        var sold = (await (await SellAsync(staff, playerId, pack, PaymentMethod.Cash)).Content.ReadFromJsonAsync<SellResult>(Json))!;
+        Assert.Equal(120, sold.MinutesLeft, 1);
+        var before = (await staff.GetFromJsonAsync<SalesReport>("/api/sales", Json))!;
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await CancelAsync(player, sold.Sale.Id)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await CancelAsync(staff, sold.Sale.Id, "x")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await CancelAsync(staff, 99999)).StatusCode);
+
+        (await CancelAsync(staff, sold.Sale.Id, "Mauvais joueur")).EnsureSuccessStatusCode();
+
+        Assert.Equal(0, (await player.GetFromJsonAsync<ProfileInfo>("/api/profile/me", Json))!.MinutesLeft, 1);
+        var after = (await staff.GetFromJsonAsync<SalesReport>("/api/sales", Json))!;
+        Assert.Equal(before.TotalCents - 700, after.TotalCents);
+        var row = Assert.Single(after.Items, s => s.Id == sold.Sale.Id);
+        Assert.True(row.Cancelled);
+        Assert.Equal("Mauvais joueur", row.CancelReason);
+
+        // A sale can only be cancelled once.
+        Assert.Equal(HttpStatusCode.Conflict, (await CancelAsync(staff, sold.Sale.Id)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancelling_a_pass_ends_it_at_once()
+    {
+        var admin = await AdminAsync();
+        var staff = await StaffAsync("tar_staff9");
+        var (playerId, player) = await PlayerAsync("tar_player9");
+        var pass = await CreateOfferAsync(admin, "Pass annulable", OfferKind.UnlimitedPass, days: 30, price: 4000);
+        var sold = (await (await SellAsync(staff, playerId, pass)).Content.ReadFromJsonAsync<SellResult>(Json))!;
+        Assert.NotNull((await player.GetFromJsonAsync<ProfileInfo>("/api/profile/me", Json))!.PassSummary);
+
+        (await CancelAsync(staff, sold.Sale.Id)).EnsureSuccessStatusCode();
+
+        Assert.Null((await player.GetFromJsonAsync<ProfileInfo>("/api/profile/me", Json))!.PassSummary);
+        Assert.Equal(HttpStatusCode.PaymentRequired, (await player.PostAsJsonAsync("/api/sessions/start", new StartSessionRequest("PC-CANCEL"), Json)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancelling_an_event_entry_makes_it_payable_again()
+    {
+        var admin = await AdminAsync();
+        var created = await admin.PostAsJsonAsync("/api/events", new SaveEventRequest("Tournoi remboursé", "x", "", DateTime.UtcNow.AddDays(3), 10, 600, true), Json);
+        var eventId = (await created.Content.ReadFromJsonAsync<EventDetail>(Json))!.Id;
+        var (_, player) = await PlayerAsync("tar_player10");
+        var ticket = (await (await player.PostAsync($"/api/events/{eventId}/register", null)).Content.ReadFromJsonAsync<TicketInfo>(Json))!;
+
+        (await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode, PaymentMethod.Card), Json)).EnsureSuccessStatusCode();
+        var sale = (await admin.GetFromJsonAsync<SalesReport>("/api/sales", Json))!.Items.Single(s => s.UserName == "tar_player10");
+
+        (await CancelAsync(admin, sale.Id)).EnsureSuccessStatusCode();
+
+        var lookup = (await admin.GetFromJsonAsync<TicketLookup>($"/api/events/tickets/{ticket.TicketCode}", Json))!;
+        Assert.Equal(600, lookup.AmountDueCents);
+        Assert.False(lookup.CheckedIn);
+        (await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode, PaymentMethod.Cash), Json)).EnsureSuccessStatusCode();
+    }
 }
 
 internal static class SaleDtoExtensions

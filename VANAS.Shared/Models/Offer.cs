@@ -59,6 +59,12 @@ namespace VANAS.Shared.Models
         public string SoldByName { get; set; } = string.Empty;
         public string? Note { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>Set when staff cancel the sale (refund): it stays in the books but no longer counts in the totals.</summary>
+        public DateTime? CancelledAt { get; set; }
+
+        public string? CancelledByName { get; set; }
+        public string? CancelReason { get; set; }
     }
 
     /// <summary>A pass owned by a player (created by selling a pass offer).</summary>

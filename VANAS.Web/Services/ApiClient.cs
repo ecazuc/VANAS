@@ -161,6 +161,9 @@ namespace VANAS.Web.Services
         public Task<ApiResult<SellResult>> SellAsync(SellRequest request) =>
             SendAsync<SellResult>(HttpMethod.Post, "api/sales", request);
 
+        public Task<ApiResult> CancelSaleAsync(int saleId, string reason) =>
+            SendAsync(HttpMethod.Post, $"api/sales/{saleId}/cancel", new CancelSaleRequest(reason));
+
         public Task<ApiResult<SalesReport>> GetSalesReportAsync(DateTime day) =>
             SendAsync<SalesReport>(HttpMethod.Get, $"api/sales?day={day:yyyy-MM-dd}");
 
