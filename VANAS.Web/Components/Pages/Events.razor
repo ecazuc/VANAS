@@ -7,9 +7,52 @@
     <h1>Événements</h1>
     <p class="lead">Tournois et soirées au café. Connectez-vous pour réserver votre place.</p>
 
+    <div class="chips">
+        <a class="pill @(!Calendar ? "pill-on" : "")" href="/evenements">Liste</a>
+        <a class="pill @(Calendar ? "pill-on" : "")" href="/evenements?vue=calendrier">Calendrier</a>
+    </div>
+
     @if (_error != null)
     {
         <p class="msg error">@_error</p>
+    }
+    else if (Calendar)
+    {
+        <nav class="pager">
+            <a class="btn small" href="@MonthLink(_month.AddMonths(-1))">&larr; @_month.AddMonths(-1).ToString("MMMM", Fr)</a>
+            <strong>@Fr.TextInfo.ToTitleCase(_month.ToString("MMMM yyyy", Fr))</strong>
+            <a class="btn small" href="@MonthLink(_month.AddMonths(1))">@_month.AddMonths(1).ToString("MMMM", Fr) &rarr;</a>
+        </nav>
+
+        <div class="calendar">
+            @foreach (var d in new[] { "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim" })
+            {
+                <div class="cal-head">@d</div>
+            }
+
+            @for (var i = 0; i < LeadingBlanks; i++)
+            {
+                <div class="cal-day empty"></div>
+            }
+
+            @for (var day = 1; day <= DateTime.DaysInMonth(_month.Year, _month.Month); day++)
+            {
+                var date = new DateTime(_month.Year, _month.Month, day);
+                var todays = _events.Where(e => e.StartsAt.ToLocalTime().Date == date).OrderBy(e => e.StartsAt).ToList();
+                <div class="cal-day @(date == DateTime.Today ? "today" : "")">
+                    <span class="cal-num">@day</span>
+                    @foreach (var e in todays)
+                    {
+                        <a class="cal-event" href="/evenements/@e.Id" title="@e.Title">@e.StartsAt.ToLocalTime().ToString("HH:mm") @e.Title</a>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (!_events.Any(e => e.StartsAt.ToLocalTime().Year == _month.Year && e.StartsAt.ToLocalTime().Month == _month.Month))
+        {
+            <p class="muted">Aucun événement ce mois-ci.</p>
+        }
     }
     else if (_events.Count == 0)
     {
@@ -35,11 +78,29 @@
 </section>
 
 @code {
+    private static readonly System.Globalization.CultureInfo Fr = System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
+    [SupplyParameterFromQuery(Name = "vue")] public string? View { get; set; }
+
+    /// <summary>The month shown in the calendar, as yyyy-MM (this month by default).</summary>
+    [SupplyParameterFromQuery(Name = "mois")] public string? Month { get; set; }
+
     private List<EventSummary> _events = new();
     private string? _error;
+    private DateTime _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+    private bool Calendar => View == "calendrier";
+
+    /// <summary>Blank cells before the 1st so the month starts on the right weekday (weeks begin on Monday).</summary>
+    private int LeadingBlanks => ((int)_month.DayOfWeek + 6) % 7;
+
+    private static string MonthLink(DateTime month) => $"/evenements?vue=calendrier&mois={month:yyyy-MM}";
 
     protected override async Task OnInitializedAsync()
     {
+        if (DateTime.TryParseExact(Month, "yyyy-MM", Fr, System.Globalization.DateTimeStyles.None, out var parsed))
+            _month = new DateTime(parsed.Year, parsed.Month, 1);
+
         var result = await Api.GetEventsAsync();
         if (result.Ok && result.Value != null) _events = result.Value;
         else _error = "Les événements sont momentanément indisponibles.";

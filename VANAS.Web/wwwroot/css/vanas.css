@@ -160,3 +160,13 @@ label { display: block; margin: 14px 0 4px; font-size: 0.8rem; color: var(--mute
 .check input { width: auto; }
 .editor .btn { margin-top: 8px; }
 @media (max-width: 1100px) { .editor { grid-template-columns: 1fr; } }
+
+/* Events calendar */
+.calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 18px 0; }
+.cal-head { font-family: var(--font-tech); text-transform: uppercase; color: var(--muted); font-size: 0.8rem; padding: 4px 6px; }
+.cal-day { background: var(--panel); border: 1px solid var(--panel-light); min-height: 92px; padding: 6px; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+.cal-day.empty { background: transparent; border-color: transparent; }
+.cal-day.today { border-color: var(--accent); }
+.cal-num { font-family: var(--font-tech); color: var(--muted); font-size: 0.85rem; }
+.cal-event { background: var(--accent); color: #16181c; font-size: 0.78rem; padding: 2px 5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 700px) { .cal-day { min-height: 56px; padding: 3px; } .cal-event { font-size: 0.65rem; } }

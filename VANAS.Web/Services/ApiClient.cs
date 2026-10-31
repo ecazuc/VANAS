@@ -142,6 +142,14 @@ namespace VANAS.Web.Services
         public Task<ApiResult> LiftSanctionAsync(int userId) =>
             SendAsync(HttpMethod.Delete, $"api/chat/moderation/sanctions/{userId}");
 
+        // ----- Café information -----
+
+        public Task<ApiResult<CafeInfoDto>> GetCafeInfoAsync() =>
+            SendAsync<CafeInfoDto>(HttpMethod.Get, "api/cafe", authenticated: false);
+
+        public Task<ApiResult<CafeInfoDto>> SaveCafeInfoAsync(SaveCafeInfoRequest request) =>
+            SendAsync<CafeInfoDto>(HttpMethod.Put, "api/cafe", request);
+
         // ----- Offers and sales -----
 
         public Task<ApiResult<List<OfferDto>>> GetOffersAsync() =>

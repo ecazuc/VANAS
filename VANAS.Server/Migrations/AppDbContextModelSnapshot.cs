@@ -75,6 +75,44 @@ namespace VANAS.Server.Migrations
                     b.ToTable("Articles");
                 });
 
+            modelBuilder.Entity("VANAS.Shared.Models.CafeInfo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AboutMarkdown")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OpeningHours")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PhotoUrls")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CafeInfo");
+                });
+
             modelBuilder.Entity("VANAS.Shared.Models.CatalogGame", b =>
                 {
                     b.Property<int>("Id")

@@ -1,0 +1,85 @@
+@page "/admin/cafe"
+@layout Layout.AdminLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+
+<PageTitle>Infos du café - VANAS staff</PageTitle>
+
+<AdminShell Title="Infos du café">
+    <p class="muted">Ce que les visiteurs voient sur la page « Le café » du site. Les tarifs se règlent dans « Tarifs ».</p>
+
+    @if (_message != null)
+    {
+        <p class="msg @(_messageIsError ? "error" : "ok")">@_message</p>
+    }
+
+    @if (!Auth.IsAdmin)
+    {
+        <p class="msg error">Seul un administrateur peut modifier ces informations.</p>
+    }
+
+    <div class="editor">
+        <div class="card">
+            <label>Horaires (une ligne par jour ou groupe de jours)</label>
+            <textarea @bind="_hours" rows="6" maxlength="1000" placeholder="Lundi - Vendredi : 14h - 22h&#10;Samedi : 10h - 23h"></textarea>
+
+            <label>Adresse</label>
+            <textarea @bind="_address" rows="3" maxlength="300"></textarea>
+
+            <div class="row two">
+                <div>
+                    <label>Téléphone</label>
+                    <input @bind="_phone" maxlength="40" />
+                </div>
+                <div>
+                    <label>E-mail</label>
+                    <input @bind="_email" maxlength="120" />
+                </div>
+            </div>
+
+            <label>Photos (une adresse http ou https par ligne, 8 maximum)</label>
+            <textarea @bind="_photos" rows="4"></textarea>
+
+            <label>Présentation (Markdown) : le matériel des PC, le règlement, comment venir...</label>
+            <textarea @bind="_about" @bind:event="oninput" rows="12"></textarea>
+
+            <button class="btn" @onclick="SaveAsync" disabled="@(_busy || !Auth.IsAdmin)">@(_busy ? "Enregistrement..." : "Enregistrer")</button>
+        </div>
+
+        <div class="card">
+            <h3>Aperçu de la présentation</h3>
+            <div class="prose">@((MarkupString)MarkdownRenderer.ToHtml(_about))</div>
+        </div>
+    </div>
+</AdminShell>
+
+@code {
+    private string _hours = string.Empty, _address = string.Empty, _phone = string.Empty, _email = string.Empty, _about = string.Empty, _photos = string.Empty;
+    private string? _message;
+    private bool _messageIsError, _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.GetAuthenticationStateAsync();
+        var result = await Api.GetCafeInfoAsync();
+        if (!result.Ok || result.Value == null)
+        {
+            _message = result.Error;
+            _messageIsError = true;
+            return;
+        }
+
+        var c = result.Value;
+        (_hours, _address, _phone, _email, _about, _photos) = (c.OpeningHours, c.Address, c.Phone, c.Email, c.AboutMarkdown, string.Join('\n', c.PhotoUrls));
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        var result = await Api.SaveCafeInfoAsync(new SaveCafeInfoRequest(_hours, _address, _phone, _email, _about, _photos));
+        _busy = false;
+        _messageIsError = !result.Ok;
+        _message = result.Ok ? "Informations enregistrées. Elles sont visibles sur le site." : result.Error;
+    }
+}

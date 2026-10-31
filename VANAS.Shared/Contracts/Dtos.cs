@@ -182,3 +182,10 @@ namespace VANAS.Shared.Contracts
     /// <summary>The player proves it is them (password) before deleting their own account.</summary>
     public record DeleteAccountRequest(string Password);
 }
+
+namespace VANAS.Shared.Contracts
+{
+    public record CafeInfoDto(string OpeningHours, string Address, string Phone, string Email, string AboutMarkdown, List<string> PhotoUrls);
+
+    public record SaveCafeInfoRequest(string OpeningHours, string Address, string Phone, string Email, string AboutMarkdown, string PhotoUrls);
+}

@@ -21,6 +21,7 @@ namespace VANAS.Server.Data
         public DbSet<UserBlock> UserBlocks => Set<UserBlock>();
         public DbSet<MessageReport> MessageReports => Set<MessageReport>();
         public DbSet<ChatSanction> ChatSanctions => Set<ChatSanction>();
+        public DbSet<CafeInfo> CafeInfo => Set<CafeInfo>();
         public DbSet<Offer> Offers => Set<Offer>();
         public DbSet<Sale> Sales => Set<Sale>();
         public DbSet<Subscription> Subscriptions => Set<Subscription>();

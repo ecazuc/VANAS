@@ -5,12 +5,22 @@
 
 <section class="container page">
     <h1>Le café</h1>
-    <p class="lead">Toutes les informations pratiques. Les rubriques marquées « à définir » seront complétées avant l'ouverture.</p>
+    <p class="lead">Toutes les informations pratiques pour venir jouer.</p>
+
+    @if (_info.PhotoUrls.Count > 0)
+    {
+        <div class="features">
+            @foreach (var photo in _info.PhotoUrls)
+            {
+                <img class="cover" src="@photo" alt="" loading="lazy" />
+            }
+        </div>
+    }
 
     <h2>Tarifs</h2>
     @if (_offers.Count == 0)
     {
-        <p class="muted">Grille tarifaire : à définir.</p>
+        <p class="muted">Grille tarifaire : à venir.</p>
     }
     else
     {
@@ -38,21 +48,55 @@
     <div class="features">
         <article class="card">
             <h3>Horaires</h3>
-            <p class="muted">À définir.</p>
+            @if (string.IsNullOrWhiteSpace(_info.OpeningHours))
+            {
+                <p class="muted">À venir.</p>
+            }
+            else
+            {
+                <p style="white-space: pre-line">@_info.OpeningHours</p>
+            }
         </article>
         <article class="card">
-            <h3>Adresse & contact</h3>
-            <p class="muted">À définir.</p>
+            <h3>Adresse &amp; contact</h3>
+            @if (string.IsNullOrWhiteSpace(_info.Address) && string.IsNullOrWhiteSpace(_info.Phone) && string.IsNullOrWhiteSpace(_info.Email))
+            {
+                <p class="muted">À venir.</p>
+            }
+            else
+            {
+                @if (!string.IsNullOrWhiteSpace(_info.Address))
+                {
+                    <p style="white-space: pre-line">@_info.Address</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(_info.Phone))
+                {
+                    <p><a href="tel:@(new string(_info.Phone.Where(c => char.IsDigit(c) || c == '+').ToArray()))">@_info.Phone</a></p>
+                }
+                @if (!string.IsNullOrWhiteSpace(_info.Email))
+                {
+                    <p><a href="mailto:@_info.Email">@_info.Email</a></p>
+                }
+            }
         </article>
     </div>
+
+    @if (!string.IsNullOrWhiteSpace(_info.AboutMarkdown))
+    {
+        <div class="prose">@((MarkupString)MarkdownRenderer.ToHtml(_info.AboutMarkdown))</div>
+    }
 </section>
 
 @code {
     private List<OfferDto> _offers = new();
+    private CafeInfoDto _info = new(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, new List<string>());
 
     protected override async Task OnInitializedAsync()
     {
-        var result = await Api.GetOffersAsync();
-        if (result.Ok && result.Value != null) _offers = result.Value;
+        var offers = await Api.GetOffersAsync();
+        if (offers.Ok && offers.Value != null) _offers = offers.Value;
+
+        var info = await Api.GetCafeInfoAsync();
+        if (info.Ok && info.Value != null) _info = info.Value;
     }
 }
