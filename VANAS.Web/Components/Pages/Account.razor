@@ -1,0 +1,132 @@
+@page "/compte"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Mon compte - VANAS</PageTitle>
+
+<section class="container page">
+    <h1>Mon compte</h1>
+
+    @if (!_loaded)
+    {
+        <p class="muted">Chargement...</p>
+    }
+    else if (_error != null)
+    {
+        <p class="msg error">@_error</p>
+    }
+    else if (_profile != null)
+    {
+        <div class="features">
+            <div class="card">
+                <p class="eyebrow">Pseudo</p>
+                <h3>@_profile.DisplayName</h3>
+                <p class="muted">Compte @_profile.Username · membre depuis le @_profile.MemberSince.ToLocalTime().ToString("dd/MM/yyyy")</p>
+            </div>
+            <div class="card">
+                <p class="eyebrow">Temps restant</p>
+                <h3>@FormatMinutes(_profile.MinutesLeft)</h3>
+                <p class="muted">Le temps se recharge au comptoir.</p>
+            </div>
+            <div class="card">
+                <p class="eyebrow">Temps joué</p>
+                <h3>@FormatMinutes(_profile.TotalMinutesPlayed)</h3>
+                <p class="muted">@_profile.SessionCount session(s)</p>
+            </div>
+        </div>
+
+        <h2>Mes billets</h2>
+        @if (_tickets.Count == 0)
+        {
+            <p class="muted">Aucune inscription. <a href="/evenements">Voir les événements</a>.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead><tr><th>Événement</th><th>Date</th><th>Billet</th><th>Entrée</th></tr></thead>
+                <tbody>
+                    @foreach (var t in _tickets)
+                    {
+                        <tr>
+                            <td><a href="/evenements/@t.EventId">@t.EventTitle</a></td>
+                            <td>@t.StartsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><code>@t.TicketCode</code></td>
+                            <td>@(t.CheckedIn ? "Validée" : "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <h2>Dernières sessions</h2>
+        @if (_sessions.Count == 0)
+        {
+            <p class="muted">Aucune session pour l'instant.</p>
+        }
+        else
+        {
+            <table class="table">
+                <thead><tr><th>Début</th><th>Poste</th><th>Durée</th></tr></thead>
+                <tbody>
+                    @foreach (var s in _sessions)
+                    {
+                        <tr>
+                            <td>@s.StartedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@s.StationName</td>
+                            <td>@FormatMinutes(s.MinutesConsumed)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <p><button class="btn" @onclick="SignOutAsync">Se déconnecter</button></p>
+    }
+</section>
+
+@code {
+    private ProfileInfo? _profile;
+    private List<TicketInfo> _tickets = new();
+    private List<SessionHistoryItem> _sessions = new();
+    private string? _error;
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Auth.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated != true)
+        {
+            Navigation.NavigateTo("/compte/connexion?retour=/compte");
+            return;
+        }
+
+        var profile = await Api.GetMyProfileAsync();
+        if (!profile.Ok || profile.Value == null)
+        {
+            // A 401 already signed us out; send the visitor back to the login page.
+            if (Auth.Token == null) Navigation.NavigateTo("/compte/connexion?retour=/compte");
+            else _error = profile.Error;
+            _loaded = true;
+            return;
+        }
+
+        _profile = profile.Value;
+        _tickets = (await Api.GetMyTicketsAsync()).Value ?? new();
+        _sessions = (await Api.GetMySessionsAsync()).Value ?? new();
+        _loaded = true;
+    }
+
+    private async Task SignOutAsync()
+    {
+        await Auth.SignOutAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    private static string FormatMinutes(double minutes)
+    {
+        var total = (int)Math.Round(Math.Max(0, minutes));
+        return total >= 60 ? $"{total / 60} h {total % 60:00} min" : $"{total} min";
+    }
+}

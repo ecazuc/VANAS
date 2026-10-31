@@ -122,6 +122,23 @@ namespace VANAS.Web.Services
         public Task<ApiResult<CheckInResult>> CheckInAsync(string ticketCode) =>
             SendAsync<CheckInResult>(HttpMethod.Post, "api/events/check-in", new CheckInRequest(ticketCode));
 
+        // ----- Customer account -----
+
+        public Task<ApiResult<ProfileInfo>> GetMyProfileAsync() =>
+            SendAsync<ProfileInfo>(HttpMethod.Get, "api/profile/me");
+
+        public Task<ApiResult<List<SessionHistoryItem>>> GetMySessionsAsync() =>
+            SendAsync<List<SessionHistoryItem>>(HttpMethod.Get, "api/profile/me/sessions?take=10");
+
+        public Task<ApiResult<List<TicketInfo>>> GetMyTicketsAsync() =>
+            SendAsync<List<TicketInfo>>(HttpMethod.Get, "api/events/mine");
+
+        public Task<ApiResult<TicketInfo>> RegisterForEventAsync(int eventId) =>
+            SendAsync<TicketInfo>(HttpMethod.Post, $"api/events/{eventId}/register");
+
+        public Task<ApiResult> UnregisterFromEventAsync(int eventId) =>
+            SendAsync(HttpMethod.Delete, $"api/events/{eventId}/register");
+
         public Task<ApiResult> RegisterAsync(string username, string password) =>
             SendAsync(HttpMethod.Post, "api/auth/register", new RegisterRequest(username, password), authenticated: false);
 

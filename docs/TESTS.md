@@ -75,5 +75,16 @@ Un événement de démonstration (« Tournoi Rocket League ») existe dans la ba
 - [ ] Réduire la capacité sous le nombre d'inscrits : refusé.
 - [ ] Supprimer l'événement : disparaît du site et de la console.
 
+## G. Comptes clients sur le site (W-4)
+- [ ] « Mon compte » (menu du site) sans être connecté : redirection vers la connexion.
+- [ ] Créer un compte depuis le site (mot de passe < 8 caractères : message en français ; identifiant déjà pris : idem) puis se connecter avec ce même compte sur le client PC.
+- [ ] Connexion avec un mauvais mot de passe : « Identifiant ou mot de passe incorrect. »
+- [ ] Connexion `joueur1` : page Mon compte avec pseudo, temps restant, temps joué, billets, dernières sessions.
+- [ ] Sur la page d'un événement, non connecté : bouton « Se connecter ou créer un compte », qui ramène sur l'événement après connexion.
+- [ ] Connecté : « Je m'inscris » affiche le billet (code) ; le billet apparaît dans Mon compte ; « Me désinscrire » le retire.
+- [ ] Événement complet : message « complet », pas de bouton.
+- [ ] Après validation du billet à l'entrée (console staff), plus de bouton de désinscription.
+- [ ] Déconnexion depuis Mon compte, puis retour sur la page d'un événement : le bouton de connexion revient.
+
 ## Ce qui n'est PAS encore fait
-Inscription aux événements depuis le site (W-4, il faut d'abord les comptes clients sur le web), QR code et application mobile (M-1 à M-5), comptes clients sur le site (W-4), messagerie (M-4), application mobile (M-1 à M-5), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, tarifs et forfaits, paiement.
+QR code et application mobile (M-1 à M-5), mot de passe oublié et suppression de compte (W-5 / RGPD), messagerie (M-4), application mobile (M-1 à M-5), installateur du client (PC-7), hébergement du site (W-5), PostgreSQL, tarifs et forfaits, paiement.

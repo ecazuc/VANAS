@@ -21,7 +21,7 @@
             <span class="muted">@(_event.PriceCents == 0 ? "Gratuit" : $"{_event.PriceCents / 100m:0.00} €")</span>
         </p>
         <div class="prose">@((MarkupString)_html)</div>
-        <p class="card">Pour réserver votre place, utilisez l'application mobile VANAS (billet avec QR code) ou passez au comptoir.</p>
+        <EventRegistrationPanel EventId="_event.Id" Full="@(left <= 0)" @rendermode="new InteractiveServerRenderMode(prerender: false)" />
     }
     else
     {

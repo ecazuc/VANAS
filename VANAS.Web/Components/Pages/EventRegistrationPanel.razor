@@ -1,0 +1,85 @@
+@inject ApiClient Api
+@inject StaffAuthState Auth
+@inject NavigationManager Navigation
+
+<div class="card">
+    @if (!_loaded)
+    {
+        <p class="muted">Chargement...</p>
+    }
+    else if (_ticket != null)
+    {
+        <p class="eyebrow">Votre billet</p>
+        <h2><code>@_ticket.TicketCode</code></h2>
+        <p class="muted">Présentez ce code à l'entrée (il figure aussi dans « Mon compte »).</p>
+        @if (_ticket.CheckedIn)
+        {
+            <p class="msg ok">Entrée validée.</p>
+        }
+        else
+        {
+            <button class="btn small danger" @onclick="UnregisterAsync" disabled="@_busy">Me désinscrire</button>
+        }
+    }
+    else if (!_signedIn)
+    {
+        <p>Connectez-vous pour réserver votre place.</p>
+        <a class="btn" href="/compte/connexion?retour=@Uri.EscapeDataString("/evenements/" + EventId)">Se connecter ou créer un compte</a>
+    }
+    else if (Full)
+    {
+        <p class="msg error">Cet événement est complet.</p>
+    }
+    else
+    {
+        <button class="btn" @onclick="RegisterAsync" disabled="@_busy">@(_busy ? "Inscription..." : "Je m'inscris")</button>
+    }
+
+    @if (_message != null)
+    {
+        <p class="msg error">@_message</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public int EventId { get; set; }
+    [Parameter] public bool Full { get; set; }
+
+    private TicketInfo? _ticket;
+    private string? _message;
+    private bool _loaded, _signedIn, _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Auth.GetAuthenticationStateAsync();
+        _signedIn = state.User.Identity?.IsAuthenticated == true;
+        if (_signedIn)
+        {
+            var mine = await Api.GetMyTicketsAsync();
+            _ticket = mine.Value?.FirstOrDefault(t => t.EventId == EventId);
+            _signedIn = Auth.Token != null;
+        }
+        _loaded = true;
+    }
+
+    private async Task RegisterAsync()
+    {
+        _busy = true;
+        _message = null;
+        var result = await Api.RegisterForEventAsync(EventId);
+        if (result.Ok) _ticket = result.Value;
+        else _message = result.Error;
+        _signedIn = Auth.Token != null;
+        _busy = false;
+    }
+
+    private async Task UnregisterAsync()
+    {
+        _busy = true;
+        _message = null;
+        var result = await Api.UnregisterFromEventAsync(EventId);
+        if (result.Ok) _ticket = null;
+        else _message = result.Error;
+        _busy = false;
+    }
+}

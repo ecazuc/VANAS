@@ -1,0 +1,125 @@
+@page "/compte/connexion"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject ApiClient Api
+@inject StaffAuthState Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Connexion - VANAS</PageTitle>
+
+<section class="container page">
+    <div class="card login-card">
+        <h1>@(_creating ? "Créer un compte" : "Connexion")</h1>
+        <p class="muted">Le même compte sert sur les PC du café, sur le site et sur l'application mobile.</p>
+
+        <form @onsubmit="SubmitAsync">
+            <label>Identifiant</label>
+            <input @bind="_username" autocomplete="username" maxlength="32" />
+
+            <label>Mot de passe</label>
+            <input type="password" @bind="_password" autocomplete="@(_creating ? "new-password" : "current-password")" />
+
+            @if (_creating)
+            {
+                <label>Confirmer le mot de passe</label>
+                <input type="password" @bind="_confirm" autocomplete="new-password" />
+            }
+
+            @if (_error != null)
+            {
+                <p class="msg error">@_error</p>
+            }
+
+            <button class="btn block" type="submit" disabled="@_busy">
+                @(_busy ? "Patientez..." : _creating ? "Créer mon compte" : "Me connecter")
+            </button>
+        </form>
+
+        <p class="muted center">
+            @if (_creating)
+            {
+                <span>Déjà un compte ? <a href="#" @onclick="() => SetMode(false)" @onclick:preventDefault>Se connecter</a></span>
+            }
+            else
+            {
+                <span>Pas encore de compte ? <a href="#" @onclick="() => SetMode(true)" @onclick:preventDefault>En créer un</a></span>
+            }
+        </p>
+    </div>
+</section>
+
+@code {
+    [SupplyParameterFromQuery(Name = "retour")] public string? ReturnUrl { get; set; }
+
+    private string _username = string.Empty, _password = string.Empty, _confirm = string.Empty;
+    private string? _error;
+    private bool _busy, _creating;
+
+    // Only local paths are accepted, so the login page cannot be used to bounce a visitor to another site.
+    private string Destination =>
+        ReturnUrl is { Length: > 0 } r && r.StartsWith('/') && !r.StartsWith("//") && !r.Contains('\\') ? r : "/compte";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Auth.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated == true) Navigation.NavigateTo(Destination);
+    }
+
+    private void SetMode(bool creating)
+    {
+        _creating = creating;
+        _error = null;
+    }
+
+    private async Task SubmitAsync()
+    {
+        _error = null;
+        if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrEmpty(_password))
+        {
+            _error = "Renseignez l'identifiant et le mot de passe.";
+            return;
+        }
+
+        if (_creating && _password != _confirm)
+        {
+            _error = "Les deux mots de passe ne correspondent pas.";
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            if (_creating)
+            {
+                var created = await Api.RegisterAsync(_username, _password);
+                if (!created.Ok)
+                {
+                    _error = Translate(created.Error);
+                    return;
+                }
+            }
+
+            var result = await Api.LoginAsync(_username, _password);
+            if (!result.Ok || result.Value == null)
+            {
+                _error = Translate(result.Error) ?? "Connexion impossible.";
+                return;
+            }
+
+            await Auth.SignInAsync(result.Value);
+            Navigation.NavigateTo(Destination);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static string? Translate(string? error) => error switch
+    {
+        "Invalid username or password." => "Identifiant ou mot de passe incorrect.",
+        "Username already taken." => "Cet identifiant est déjà pris.",
+        "Username must be between 3 and 32 characters." => "L'identifiant doit faire entre 3 et 32 caractères.",
+        "Password must be at least 8 characters." => "Le mot de passe doit faire au moins 8 caractères.",
+        _ => error
+    };
+}
