@@ -9,7 +9,10 @@ namespace VANAS.Shared.Models
         UnlimitedPass = 1,
 
         /// <summary>A quota of minutes to use during the pass; what is left is lost at the end.</summary>
-        QuotaPass = 2
+        QuotaPass = 2,
+
+        /// <summary>An event entry paid at the door. Never sold as an offer: it only appears on sales.</summary>
+        EventTicket = 3
     }
 
     public enum PaymentMethod

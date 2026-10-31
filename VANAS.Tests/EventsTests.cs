@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using VANAS.Shared.Contracts;
+using VANAS.Shared.Models;
 
 namespace VANAS.Tests;
 
@@ -109,7 +110,7 @@ public class EventsTests : IClassFixture<VanasFactory>
         Assert.Equal(HttpStatusCode.Forbidden, (await player.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode), Json)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest("ZZZZZZZZZZ"), Json)).StatusCode);
 
-        var first = await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode.ToLowerInvariant()), Json);
+        var first = await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode.ToLowerInvariant(), PaymentMethod.Card), Json);
         first.EnsureSuccessStatusCode();
         Assert.Equal(HttpStatusCode.Conflict, (await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode), Json)).StatusCode);
 
@@ -132,6 +133,68 @@ public class EventsTests : IClassFixture<VanasFactory>
 
         var res = await admin.PutAsJsonAsync($"/api/events/{id}",
             new SaveEventRequest("Tournoi test", "x", "", DateTime.UtcNow.AddDays(2), 1, 0, true), Json);
+        Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
+    }
+
+    private static Task<HttpResponseMessage> CreateEventAsync(HttpClient admin, string title, int priceCents) =>
+        admin.PostAsJsonAsync("/api/events", new SaveEventRequest(title, "Jeu", "", DateTime.UtcNow.AddDays(3), 10, priceCents, true), Json);
+
+    [Fact]
+    public async Task A_paid_entry_is_collected_at_the_door_and_lands_in_the_cash_report()
+    {
+        var admin = await LoginAsync("admin", "Admin-Test-123!");
+        var id = (await (await CreateEventAsync(admin, "Tournoi payant", 750)).Content.ReadFromJsonAsync<EventDetail>(Json))!.Id;
+        var player = await PlayerAsync("evt_pay1");
+        var ticket = (await (await player.PostAsync($"/api/events/{id}/register", null)).Content.ReadFromJsonAsync<TicketInfo>(Json))!;
+
+        var lookup = (await admin.GetFromJsonAsync<TicketLookup>($"/api/events/tickets/{ticket.TicketCode}", Json))!;
+        Assert.Equal(750, lookup.AmountDueCents);
+        Assert.False(lookup.CheckedIn);
+
+        // Without a payment method the entry is refused and nothing is recorded.
+        Assert.Equal(HttpStatusCode.BadRequest, (await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode), Json)).StatusCode);
+        Assert.False((await admin.GetFromJsonAsync<TicketLookup>($"/api/events/tickets/{ticket.TicketCode}", Json))!.CheckedIn);
+
+        var ok = await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode, PaymentMethod.Cash), Json);
+        ok.EnsureSuccessStatusCode();
+        Assert.Equal(750, (await ok.Content.ReadFromJsonAsync<CheckInResult>(Json))!.PaidCents);
+
+        var report = (await admin.GetFromJsonAsync<SalesReport>("/api/sales", Json))!;
+        var sale = Assert.Single(report.Items, s => s.UserName == "evt_pay1");
+        Assert.Equal(750, sale.PriceCents);
+        Assert.Equal(PaymentMethod.Cash, sale.Method);
+        Assert.Equal(OfferKind.EventTicket, sale.Kind);
+        Assert.Contains("Tournoi payant", sale.OfferName);
+
+        // Scanning the same ticket again neither lets the player in nor charges twice.
+        Assert.Equal(HttpStatusCode.Conflict, (await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode, PaymentMethod.Cash), Json)).StatusCode);
+        Assert.Single((await admin.GetFromJsonAsync<SalesReport>("/api/sales", Json))!.Items, s => s.UserName == "evt_pay1");
+    }
+
+    [Fact]
+    public async Task A_free_entry_needs_no_payment_and_records_no_sale()
+    {
+        var admin = await LoginAsync("admin", "Admin-Test-123!");
+        var id = (await (await CreateEventAsync(admin, "Soirée gratuite", 0)).Content.ReadFromJsonAsync<EventDetail>(Json))!.Id;
+        var player = await PlayerAsync("evt_free1");
+        var ticket = (await (await player.PostAsync($"/api/events/{id}/register", null)).Content.ReadFromJsonAsync<TicketInfo>(Json))!;
+
+        Assert.Equal(0, (await admin.GetFromJsonAsync<TicketLookup>($"/api/events/tickets/{ticket.TicketCode}", Json))!.AmountDueCents);
+        var ok = await admin.PostAsJsonAsync("/api/events/check-in", new CheckInRequest(ticket.TicketCode), Json);
+        ok.EnsureSuccessStatusCode();
+        Assert.Equal(0, (await ok.Content.ReadFromJsonAsync<CheckInResult>(Json))!.PaidCents);
+        Assert.DoesNotContain((await admin.GetFromJsonAsync<SalesReport>("/api/sales", Json))!.Items, s => s.UserName == "evt_free1");
+    }
+
+    [Fact]
+    public async Task Only_staff_can_look_up_tickets_and_event_tickets_cannot_be_created_as_offers()
+    {
+        var admin = await LoginAsync("admin", "Admin-Test-123!");
+        var player = await PlayerAsync("evt_look1");
+        Assert.Equal(HttpStatusCode.Forbidden, (await player.GetAsync("/api/events/tickets/ABCDEFGHJK")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync("/api/events/tickets/ZZZZZZZZZZ")).StatusCode);
+
+        var res = await admin.PostAsJsonAsync("/api/offers", new SaveOfferRequest("Fausse entrée", "", OfferKind.EventTicket, 60, 0, 0, 500, true, 0), Json);
         Assert.Equal(HttpStatusCode.BadRequest, res.StatusCode);
     }
 }

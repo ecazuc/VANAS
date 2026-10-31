@@ -23,5 +23,10 @@ namespace VANAS.Shared.Models
         public string TicketCode { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? CheckedInAt { get; set; }
+
+        /// <summary>When the entry fee was collected at the door (null for a free event or before payment).</summary>
+        public DateTime? PaidAt { get; set; }
+
+        public int? SaleId { get; set; }
     }
 }

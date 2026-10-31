@@ -20,6 +20,7 @@ namespace VANAS.Shared.Contracts
             OfferKind.HourPack => "Heures de jeu",
             OfferKind.UnlimitedPass => "Forfait illimité",
             OfferKind.QuotaPass => "Forfait d'heures",
+            OfferKind.EventTicket => "Entrée d'événement",
             _ => "Formule"
         };
 

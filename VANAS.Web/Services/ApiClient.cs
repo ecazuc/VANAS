@@ -122,8 +122,11 @@ namespace VANAS.Web.Services
         public Task<ApiResult<List<RegistrationInfo>>> GetRegistrationsAsync(int eventId) =>
             SendAsync<List<RegistrationInfo>>(HttpMethod.Get, $"api/events/manage/{eventId}/registrations");
 
-        public Task<ApiResult<CheckInResult>> CheckInAsync(string ticketCode) =>
-            SendAsync<CheckInResult>(HttpMethod.Post, "api/events/check-in", new CheckInRequest(ticketCode));
+        public Task<ApiResult<TicketLookup>> LookupTicketAsync(string ticketCode) =>
+            SendAsync<TicketLookup>(HttpMethod.Get, $"api/events/tickets/{Uri.EscapeDataString(ticketCode.Trim())}");
+
+        public Task<ApiResult<CheckInResult>> CheckInAsync(string ticketCode, PaymentMethod? method = null) =>
+            SendAsync<CheckInResult>(HttpMethod.Post, "api/events/check-in", new CheckInRequest(ticketCode, method));
 
         // ----- Chat moderation -----
 

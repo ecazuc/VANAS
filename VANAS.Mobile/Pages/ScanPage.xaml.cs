@@ -1,5 +1,6 @@
 using VANAS.Mobile.Services;
 using VANAS.Shared.Contracts;
+using VANAS.Shared.Models;
 #if ANDROID
 using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
@@ -101,9 +102,40 @@ public partial class ScanPage : ContentPage
         Busy.IsVisible = Busy.IsRunning = true;
         try
         {
-            var result = await _api.CheckInAsync(code);
+            // A paid entry is collected at the door: show the amount and ask how it was paid before letting the player in.
+            var lookup = await _api.LookupTicketAsync(code);
+            if (!lookup.Ok || lookup.Value == null)
+            {
+                ShowResult("✘ " + (lookup.Error ?? "Billet refusé."), false);
+                return;
+            }
+
+            PaymentMethod? method = null;
+            if (!lookup.Value.CheckedIn && lookup.Value.AmountDueCents > 0)
+            {
+                var choice = await DisplayActionSheet(
+                    $"À encaisser : {OfferText.Euros(lookup.Value.AmountDueCents)} ({lookup.Value.DisplayName})",
+                    "Annuler", null, "Encaissé en espèces", "Encaissé par carte", "Encaissé autrement");
+                method = choice switch
+                {
+                    "Encaissé en espèces" => PaymentMethod.Cash,
+                    "Encaissé par carte" => PaymentMethod.Card,
+                    "Encaissé autrement" => PaymentMethod.Other,
+                    _ => null
+                };
+                if (method == null)
+                {
+                    ShowResult("Entrée non validée : paiement non encaissé.", false);
+                    return;
+                }
+            }
+
+            var result = await _api.CheckInAsync(code, method);
             if (result.Ok && result.Value != null)
-                ShowResult($"✔ ENTRÉE VALIDÉE\n{result.Value.DisplayName}\n{result.Value.EventTitle}", true);
+            {
+                var paid = result.Value.PaidCents > 0 ? $"\n{OfferText.Euros(result.Value.PaidCents)} encaissés" : string.Empty;
+                ShowResult($"✔ ENTRÉE VALIDÉE\n{result.Value.DisplayName}\n{result.Value.EventTitle}{paid}", true);
+            }
             else
                 ShowResult("✘ " + (result.Error ?? "Billet refusé."), false);
         }

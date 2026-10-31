@@ -88,7 +88,7 @@ namespace VANAS.Server.Controllers
 
         private static string? Validate(SaveOfferRequest r)
         {
-            if (!Enum.IsDefined(r.Kind)) return "Type de formule invalide.";
+            if (!Enum.IsDefined(r.Kind) || r.Kind == OfferKind.EventTicket) return "Type de formule invalide.";
             if ((r.Name?.Trim().Length ?? 0) is < 2 or > 60) return "Le nom doit faire entre 2 et 60 caractères.";
             if ((r.Description?.Length ?? 0) > 300) return "La description est limitée à 300 caractères.";
             if (r.PriceCents is < 0 or > 1_000_000) return "Le prix est invalide.";

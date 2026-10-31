@@ -14,6 +14,20 @@
         <p class="muted">Saisissez le code du billet (affiché sous le QR code du joueur).</p>
         <input @bind="_ticketCode" @bind:event="oninput" @onkeydown="OnCheckInKey" maxlength="10" placeholder="CODE DU BILLET" />
         <button class="btn" @onclick="CheckInAsync">Valider l'entrée</button>
+        @if (_toCollect != null)
+        {
+            <div class="card">
+                <p><strong>@_toCollect.DisplayName</strong> — @_toCollect.EventTitle</p>
+                <p class="big">À encaisser : @OfferText.Euros(_toCollect.AmountDueCents)</p>
+                <div class="actions">
+                    @foreach (var m in Enum.GetValues<PaymentMethod>())
+                    {
+                        <button class="btn" @onclick="() => ValidateAsync(m)">Encaissé : @OfferText.MethodLabel(m)</button>
+                    }
+                    <button class="btn small" @onclick="CancelCollect">Annuler</button>
+                </div>
+            </div>
+        }
         @if (_checkInMessage != null)
         {
             <p class="msg @(_checkInOk ? "ok" : "error")">@_checkInMessage</p>
@@ -89,6 +103,7 @@
     private string _ticketCode = string.Empty;
     private string? _message, _checkInMessage;
     private bool _checkInOk;
+    private TicketLookup? _toCollect;
 
     protected override async Task OnInitializedAsync()
     {
@@ -118,21 +133,48 @@
         if (e.Key == "Enter") await CheckInAsync();
     }
 
+    /// <summary>Looks the ticket up first: a free entry is validated at once, a paid one waits for the payment method.</summary>
     private async Task CheckInAsync()
     {
         if (string.IsNullOrWhiteSpace(_ticketCode)) return;
-        var result = await Api.CheckInAsync(_ticketCode);
+        _toCollect = null;
+
+        var lookup = await Api.LookupTicketAsync(_ticketCode);
+        if (!lookup.Ok || lookup.Value == null)
+        {
+            _checkInOk = false;
+            _checkInMessage = lookup.Error;
+            return;
+        }
+
+        if (!lookup.Value.CheckedIn && lookup.Value.AmountDueCents > 0)
+        {
+            _toCollect = lookup.Value;
+            _checkInMessage = null;
+            return;
+        }
+
+        await ValidateAsync(null);
+    }
+
+    private async Task ValidateAsync(PaymentMethod? method)
+    {
+        var result = await Api.CheckInAsync(_ticketCode, method);
         _checkInOk = result.Ok;
         _checkInMessage = result.Ok && result.Value != null
-            ? $"Entrée validée : {result.Value.DisplayName} — {result.Value.EventTitle}"
+            ? $"Entrée validée : {result.Value.DisplayName} — {result.Value.EventTitle}" +
+              (result.Value.PaidCents > 0 ? $" ({OfferText.Euros(result.Value.PaidCents)} encaissés)" : string.Empty)
             : result.Error;
         if (result.Ok)
         {
             _ticketCode = string.Empty;
+            _toCollect = null;
             await LoadAsync();
             if (_openRegistrations is int open) _registrations = (await Api.GetRegistrationsAsync(open)).Value ?? new();
         }
     }
+
+    private void CancelCollect() => _toCollect = null;
 
     private async Task DeleteAsync(EventSummary e)
     {

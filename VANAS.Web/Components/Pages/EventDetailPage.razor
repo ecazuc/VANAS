@@ -18,7 +18,7 @@
         <h1>@_event.Title</h1>
         <p>
             <span class="chip @(left > 0 ? "chip-on" : "chip-off")">@(left > 0 ? $"{left} place(s) restante(s) sur {_event.Capacity}" : "COMPLET")</span>
-            <span class="muted">@(_event.PriceCents == 0 ? "Gratuit" : $"{_event.PriceCents / 100m:0.00} €")</span>
+            <span class="muted">@(_event.PriceCents == 0 ? "Gratuit" : $"{_event.PriceCents / 100m:0.00} €, à régler au comptoir à l'entrée")</span>
         </p>
         <div class="prose">@((MarkupString)_html)</div>
         <EventRegistrationPanel EventId="_event.Id" Full="@(left <= 0)" @rendermode="new InteractiveServerRenderMode(prerender: false)" />

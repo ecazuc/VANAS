@@ -106,9 +106,12 @@ namespace VANAS.Shared.Contracts
 
     public record RegistrationInfo(string Username, string DisplayName, string TicketCode, DateTime CreatedAt, DateTime? CheckedInAt);
 
-    public record CheckInRequest(string TicketCode);
+    public record CheckInRequest(string TicketCode, VANAS.Shared.Models.PaymentMethod? Method = null);
 
-    public record CheckInResult(string DisplayName, string EventTitle);
+    /// <summary>What the staff sees before letting someone in: who, which event and how much is still to collect.</summary>
+    public record TicketLookup(string DisplayName, string EventTitle, int AmountDueCents, bool CheckedIn);
+
+    public record CheckInResult(string DisplayName, string EventTitle, int PaidCents = 0);
 }
 
 namespace VANAS.Shared.Contracts

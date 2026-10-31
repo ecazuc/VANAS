@@ -185,25 +185,77 @@ namespace VANAS.Server.Controllers
             return Ok(rows);
         }
 
-        /// <summary>Validates a ticket at the door. The first scan succeeds, any later one is refused.</summary>
+        /// <summary>What to tell the staff before letting someone in: who it is and how much is still to collect.</summary>
+        [Authorize(Roles = "Staff,Admin")]
+        [HttpGet("tickets/{code}")]
+        public async Task<IActionResult> LookupTicket(string code)
+        {
+            var registration = await FindTicketAsync(code);
+            if (registration == null) return NotFound("Billet inconnu.");
+
+            var e = await _db.Events.FindAsync(registration.EventId);
+            var profile = await _db.Profiles.FindAsync(registration.UserId);
+            return Ok(new TicketLookup(profile?.DisplayName ?? "?", e?.Title ?? "?", AmountDue(registration, e), registration.CheckedInAt != null));
+        }
+
+        /// <summary>
+        /// Validates a ticket at the door. The first scan succeeds, any later one is refused.
+        /// For a paid event the entry fee is collected here: the staff gives the payment method and the sale goes into the day's cash report.
+        /// </summary>
         [Authorize(Roles = "Staff,Admin")]
         [HttpPost("check-in")]
         public async Task<IActionResult> CheckIn([FromBody] CheckInRequest request)
         {
-            var code = (request.TicketCode ?? string.Empty).Trim().ToUpperInvariant();
-            var registration = await _db.EventRegistrations.FirstOrDefaultAsync(r => r.TicketCode == code);
+            var registration = await FindTicketAsync(request.TicketCode);
             if (registration == null) return NotFound("Billet inconnu.");
 
             if (registration.CheckedInAt != null)
                 return Conflict($"Billet déjà utilisé à {registration.CheckedInAt.Value.ToLocalTime():HH:mm}.");
 
-            registration.CheckedInAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
-
             var e = await _db.Events.FindAsync(registration.EventId);
             var profile = await _db.Profiles.FindAsync(registration.UserId);
-            return Ok(new CheckInResult(profile?.DisplayName ?? "?", e?.Title ?? "?"));
+            var due = AmountDue(registration, e);
+            var now = DateTime.UtcNow;
+
+            if (due > 0)
+            {
+                if (request.Method is not PaymentMethod method || !Enum.IsDefined(method))
+                    return BadRequest($"Entrée payante : encaissez {due / 100m:0.00} € et indiquez le moyen de paiement.");
+
+                var seller = await _db.Users.FindAsync(CurrentUserId);
+                var player = await _db.Users.FindAsync(registration.UserId);
+                var sale = new Sale
+                {
+                    UserId = registration.UserId,
+                    UserName = player?.Username ?? "?",
+                    OfferName = $"Entrée : {e!.Title}",
+                    OfferKind = OfferKind.EventTicket,
+                    PriceCents = due,
+                    Method = method,
+                    SoldByUserId = CurrentUserId,
+                    SoldByName = seller?.Username ?? "?",
+                    CreatedAt = now
+                };
+                _db.Sales.Add(sale);
+                await _db.SaveChangesAsync();
+
+                registration.PaidAt = now;
+                registration.SaleId = sale.Id;
+            }
+
+            registration.CheckedInAt = now;
+            await _db.SaveChangesAsync();
+            return Ok(new CheckInResult(profile?.DisplayName ?? "?", e?.Title ?? "?", due));
         }
+
+        private Task<EventRegistration?> FindTicketAsync(string? ticketCode)
+        {
+            var code = (ticketCode ?? string.Empty).Trim().ToUpperInvariant();
+            return _db.EventRegistrations.FirstOrDefaultAsync(r => r.TicketCode == code);
+        }
+
+        private static int AmountDue(EventRegistration registration, GameEvent? e) =>
+            registration.PaidAt != null || e == null ? 0 : e.PriceCents;
 
         private static void Apply(GameEvent e, SaveEventRequest r)
         {

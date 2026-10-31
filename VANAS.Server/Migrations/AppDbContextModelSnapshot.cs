@@ -180,6 +180,12 @@ namespace VANAS.Server.Migrations
                     b.Property<int>("EventId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SaleId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("TicketCode")
                         .IsRequired()
                         .HasColumnType("TEXT");
