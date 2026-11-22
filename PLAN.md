@@ -48,7 +48,7 @@ On clone le dépôt existant et on corrige (Étape 0) plutôt que de recommencer
 
 ## Règle de travail : un jalon = une livraison testable
 
-Chaque étape ci-dessous se termine par **« À tester »** (checklist que vous exécutez) puis un **point de correction** : vous testez, listez les retours, je corrige avant de passer à l'étape suivante. Une branche + un tag git par étape (`etape-0`, `pc-1`…), pour pouvoir revenir en arrière.
+Chaque étape ci-dessous se termine par **« À tester »** (checklist que vous exécutez) puis un **point de correction** : vous testez, listez les retours, je corrige avant de passer à l'étape suivante. Git : chaque étape se fait sur sa propre branche, partie de `main`. Une fois l'étape validée, sa branche est fusionnée dans `main` puis supprimée, et l'étape suivante repart d'une nouvelle branche. `main` contient toujours la dernière version validée.
 
 ---
 
@@ -147,12 +147,12 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 
 ## Avancement (mis à jour au fil des étapes)
 
-| Étape | État | Branche |
+| Étape | État | Branche d'origine (fusionnée dans `main` le 22/11/2026, puis supprimée) |
 |---|---|---|
 | Étape 0 — fondations serveur/sécurité | Validée, poussée | `etape-0` |
 | PC-1 — client login/session | Validée, poussée | `etape-0` |
 | W-1 — site vitrine + PC-6 console staff | Validées, poussées | `etape-0` |
-| PC-2 — mode kiosque | Code terminé, **en attente de test en VM** (VirtualBox, `tools/Create-TestVM.ps1`) | `pc-2` |
+| PC-2 — mode kiosque | Testé en VM (VirtualBox, `tools/Create-TestVM.ps1`), corrections faites (voir « Corrections du test kiosque ») ; à revalider en VM puis sur un vrai poste | `pc-2` |
 | PC-3 — profil, overlay en jeu, alertes 10/5/1 min | Code terminé, à tester | `pc-3` |
 | PC-4 — bibliothèque et lancement de jeux (catalogue serveur + console /admin/jeux, détection Steam/Epic/Riot) | Code terminé, à tester | `pc-4` |
 | PC-5 — installation de jeux (confirmation, progression Steam, espace disque, nettoyage des comptes launchers) | Code terminé, à tester | `pc-5` |
@@ -161,7 +161,7 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 | W-4 — comptes clients sur le site (connexion, création de compte, Mon compte, inscription aux événements depuis la page de l'événement) | Code terminé, à tester | `w-4` |
 | M-1 — application mobile : socle MAUI, connexion/création de compte, jeton sécurisé, accueil avec le temps restant (testé en version Windows ; Android à tester sur téléphone) | Code terminé, à tester | `m-1` |
 | M-2 — temps restant en direct sur le mobile (décompte, EN JEU/HORS SESSION, mise à jour immédiate via SignalR, alertes 10/5/1 min dans l'app, historique) ; notification poussée app fermée = M-5 (Firebase) | Code terminé, à tester | `m-2` |
-| M-3 — événements sur mobile, inscription, billet avec QR code, scanner staff (caméra Android + saisie manuelle) ; le code de la caméra compile pour Android mais n'a jamais été essayé sur un téléphone | Code terminé, à tester | `m-3` |
+| M-3 — événements sur mobile, inscription, billet avec QR code, scanner staff (caméra Android + saisie manuelle) | Code terminé ; **scan par la caméra validé sur téléphone** ; le reste à tester | `m-3` |
 | Tarifs — formules (heures, forfait illimité avec plafond par jour, forfait d'heures), vente au comptoir, caisse du jour, grille publique ; heures sans expiration | Code terminé, à tester | `tarifs` |
 | M-4 - messagerie : jeux joués, salons par jeu, messages privés, blocage, signalement, modération staff (masquer, silence, bannissement), filtre liens/téléphones/spam, limite de vitesse, temps réel | Code terminé, à tester | `m-4` |
 | Âge minimum 12 ans, accord parental au comptoir (avant 15 ans), coupure de la diffusion des salons, purge automatique des messages (90 jours), document de données personnelles | Code terminé, à tester | `age-conservation` |
@@ -169,12 +169,13 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 | Export et suppression de son compte par le joueur ; message d'accord parental sur « Mon compte » | Code terminé, à tester | `account-data` |
 | Page « Le café » modifiable par l'administrateur (horaires, adresse, contact, photos, présentation) ; calendrier des événements | Code terminé, à tester | `site-content` |
 | PC-7 — installateur du client PC : script d'installation, mise à jour automatique au démarrage (somme de contrôle, retour arrière), journaux | Code terminé, à tester (installation et mise à jour essayées dans un dossier de test, pas encore sur un vrai PC ni avec le mode kiosque) | `pc-7` |
+| Corrections du test kiosque : la fenêtre du PIN administrateur reçoit le clavier ; la mise à jour automatique fonctionne avec le client kiosque toujours ouvert (elle attend la fin de la session, remplace les fichiers puis redémarre le PC) ; tentatives de PIN journalisées | Code terminé, à revalider en VM | `kiosk-fixes` |
 | W-5 — mise en ligne du site | Mise de côté jusqu'après la refonte du design | |
 | M-5 — publication de l'application mobile | Mise de côté jusqu'après la refonte du design | |
 
 ## Ordre à suivre à partir d'ici
 
-1. **Valider ce qui est codé** : test du mode kiosque en VM (PC-2), puis les checklists de `docs/TESTS.md` (sections A à K) sur les PC et le Pixel.
+1. **Valider ce qui est codé** : revalider le mode kiosque en VM avec les corrections (installation `-EnableKiosk` comprise), puis les checklists de `docs/TESTS.md` (sections A à K) sur les PC et le téléphone Android.
 2. **Terminer les fonctionnalités** restantes de la liste « Éléments laissés incomplets » ci-dessous (presque tout est fait ; PC-7 est codé).
 3. **Refonte du design** des trois applications (client PC, site, mobile), avec le nom et le logo définitifs.
 4. **Seulement ensuite** : mise en ligne (W-5), publication de l'application (M-5), paiement en ligne.
@@ -183,9 +184,13 @@ Cloner le dépôt dans `Q:\projects\VANNAS`, y copier ce document en `PLAN.md`, 
 
 | Élément | Étape d'origine | État actuel |
 |---|---|---|
-| Détection de Battle.net | PC-4 | Seuls Steam, Epic et Riot sont détectés. Non fait : la détection et le lancement ne peuvent pas être vérifiés sans Battle.net installé et un compte. À reprendre avec un poste équipé. |
+| Détection de Battle.net | PC-4 | Seuls Steam, Epic et Riot sont détectés. Non fait. Battle.net est maintenant installé sur le PC de développement (`Q:\Battle.net`) : la détection peut être codée et vérifiée (le lancement d'un jeu demande en plus un compte). |
 | Photos téléversées depuis la console | W-1 | La page « Le café » prend des adresses de photos (http/https) ; pas de téléversement de fichiers. |
 | Durcissement de l'installateur en kiosque | PC-7 | L'enchaînement `-EnableKiosk` (PIN, compte dédié, ouverture automatique) n'a été essayé qu'en simulation : à valider dans la VM. |
+
+### Validé en conditions réelles
+
+- **Scan du QR code par la caméra** (M-3) : testé sur téléphone, fonctionne.
 
 ### Terminé depuis la première version de cette liste
 
@@ -193,9 +198,8 @@ Message du staff à un poste ; encaissement des événements au contrôle d'entr
 
 ### Codé mais jamais validé en conditions réelles
 
-- **Mode kiosque (PC-2)** : jamais testé en vrai (la VM de test était bloquée) ; `kiosk/Install-KioskUser.ps1` jamais lancé sur une machine réelle. C'est le risque principal avant l'ouverture.
-- **Scan du QR code par la caméra** : compile pour Android, jamais essayé sur le Pixel.
-- **Application Android sur le Pixel** : pas à jour (forfaits, messagerie, âge).
+- **Mode kiosque (PC-2)** : testé en VM, les problèmes trouvés sont corrigés mais la VM doit être refaite avec ces corrections ; `kiosk/Install-KioskUser.ps1` jamais lancé sur une machine réelle. C'est le risque principal avant l'ouverture.
+- **Application Android** : le téléphone de test a changé (nouveau modèle `25078RA3EE`, relié en USB avec le débogage activé). Il faut y installer la version à jour (forfaits, messagerie, âge) et refaire les checklists mobiles dessus.
 - **Écrans d'inscription** (site, mobile, client PC) avec la date de naissance : compilés, pas vus à l'écran.
 
 ## Mis de côté volontairement (après la refonte du design)

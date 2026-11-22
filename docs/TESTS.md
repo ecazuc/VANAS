@@ -96,7 +96,7 @@ Le serveur doit tourner. Version PC : voir `VANAS.Mobile/README.md`. Sur télép
 - [ ] Avec peu de temps (compte `alerteur`) : bandeau rouge à 10, 5 et 1 minute.
 - [ ] Événements : liste, détail (description, places, tarif), « Je m'inscris » : billet avec QR code et code à 10 caractères ; « Me désinscrire » le retire ; événement complet : pas de bouton.
 - [ ] Un joueur n'a pas l'onglet Scanner ; `staffeur` l'a.
-- [ ] Scanner (Android, caméra) : autoriser la caméra, scanner le QR code d'un autre téléphone : « ENTRÉE VALIDÉE » avec le nom du joueur ; un second scan : « déjà utilisé ». Saisie manuelle du code : même résultat.
+- [x] Scanner (Android, caméra) : autoriser la caméra, scanner le QR code d'un autre téléphone : « ENTRÉE VALIDÉE » avec le nom du joueur ; un second scan : « déjà utilisé ». Saisie manuelle du code : même résultat.
 - [ ] La notification quand l'application est fermée n'existe pas encore (M-5).
 
 ## I. Tarifs, forfaits et caisse
@@ -109,7 +109,6 @@ Exemples de formules déjà créés dans la base de développement (prix de dém
 - [ ] Forfait illimité (avec plafond par jour) : connectez-vous sur un PC, jouez quelques minutes : le solde en heures ne baisse pas, le forfait oui.
 - [ ] Forfait d'heures : le temps restant baisse et, une fois le quota épuisé, le joueur est déconnecté (s'il n'a pas d'heures achetées).
 - [ ] Deux forfaits du même type vendus au même joueur : le second commence à la fin du premier.
-- [ ] Pas encore possible : annuler ou rembourser une vente (à corriger à la main avec « + min » avec un nombre négatif et une note).
 
 ## J. Messagerie (M-4)
 Comptes de test : `copain` (joue à tous les jeux, règles acceptées), `alerteur`, `staffeur`. Les mots de passe sont `motdepassetest`.
